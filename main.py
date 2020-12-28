@@ -8,6 +8,14 @@ from argparse import ArgumentParser
 
 import numpy as np
 import pandas as pd
+from sklearn import model_selection
+from sklearn import metrics
+from sklearn import preprocessing
+from sklearn import linear_model
+from sklearn import ensemble
+from sklearn import pipeline
+import lightgbm as lgb
+from sklearn import decomposition
 
 
 # create command line args parser
@@ -16,10 +24,8 @@ def build_argparser():
     Parse command line arguments
     :return: ArgumentParser
     """
-    parser = ArgumentParser(
-        description="Select the model and various hyperparameters."
-    )
-    parser.add_argument('--model', required=True, help='Model to be used.')
+    parser = ArgumentParser(description="Select the model and various hyperparameters.")
+    parser.add_argument("--model", required=True, help="Model to be used.")
 
     return parser
 
@@ -70,11 +76,10 @@ def MSE(
 
 
 # display results
-def show_results(
-    fold: int, loss: Union[np.ndarray, float], model: Union[str, Callable]
-) -> None:
-    print(f"Model: {model}, fold: {fold}")
-    print(f"Average MSE: {loss}")
+def show_results(loss: Union[np.ndarray, float], model: Union[str, Callable]) -> None:
+    print(f"Model: {model}")
+    print(f"Average MSE: {np.mean(loss)}")
+    print(f"Average std: {np.std(loss)}")
 
 
 # run the baseline model
@@ -106,9 +111,111 @@ def run_baseline(
     show_results(fold, loss, model)
 
 
+# utility function to return the score
+def scorer(score_fn: Callable) -> Callable:
+    """
+    Returns the estimated value of the scoring function.
+
+    :param score_fn: scoring function (can be a loss or accuracy or any other
+    function in `sklearn.metrics`) :return: function giving the score
+    """
+    # `greater_is_better=False` for MSE, RMSE, etc.
+    return metrics.make_scorer(score_fn, greater_is_better=False)
+
+
+# calculate loss for each model
+def train(
+    model,
+    X: Union[np.ndarray, pd.DataFrame],
+    y: Union[np.ndarray, pd.Series],
+    criteria: Callable,
+    n_folds: int = 10,
+) -> float:
+    """
+    Find the error for each cross-validation fold.
+
+    :param model: Estimator from sklearn
+    :param X: Training data containing all the features
+    :param y: Labels
+    :param criteria: Scorer from sklearn
+    :param n_folds: number of cv folds
+    :return: MSE for each fold
+    """
+    kf = model_selection.KFold(
+        n_splits=n_folds, shuffle=True, random_state=23
+    ).get_n_splits(X)
+
+    error = model_selection.cross_val_score(
+        model, X, y, scoring=criteria, cv=kf, n_jobs=-1, verbose=5
+    )
+
+    return -1 * error
+
+
+def get_feature_df(
+    df: pd.DataFrame, cat_vars: list = None, num_vars: list = None
+) -> pd.DataFrame:
+    """
+    One-hot encoding the categorical variables and return the feature dataframe
+
+    :param df: Original raw dataframe
+    :param cat_vars: Categorical variables
+    :param num_vars: Numeric variables
+    :return: feature dataframe
+    """
+    cat_df = pd.get_dummies(df[cat_vars])
+    num_df = df[num_vars].apply(pd.to_numeric)
+
+    return pd.concat([cat_df, num_df], axis=1)
+
+
 if __name__ == "__main__":
+    args = build_argparser().parse_args()
+
     path = "data/"
+    print("Reading data...")
     data = pd.read_csv(os.path.join(path, "train_folds.csv"))
 
-    for i in range(10):
-        run_baseline(data, fold=i)
+    if args.model == "baseline":
+        for i in range(10):
+            run_baseline(data, fold=i)
+
+    else:
+        # encode the data
+        print(f"Encoding data...")
+        categorical_vars = ["companyId", "jobType", "degree", "major", "industry"]
+        numeric_vars = ["yearsExperience", "milesFromMetropolis"]
+
+        target = data.salary.values
+        features_df = get_feature_df(
+            data, cat_vars=categorical_vars, num_vars=numeric_vars
+        )
+        features = features_df.values
+
+        # define the models
+        models = []
+        lr = linear_model.LinearRegression()
+        lr_std_pca = pipeline.make_pipeline(
+            preprocessing.StandardScaler(),
+            decomposition.PCA(),
+            linear_model.LinearRegression(),
+        )
+        rf = ensemble.RandomForestRegressor(
+            n_estimators=150,
+            n_jobs=-1,
+            max_depth=25,
+            min_samples_split=60,
+            max_features=30,
+            verbose=1,
+        )
+        gbm = ensemble.GradientBoostingRegressor(
+            n_estimators=150, max_depth=5, loss="ls", verbose=1
+        )
+        lgbm = lgb.LGBMRegressor(n_estimators=150, learning_rate=0.5, n_jobs=-1)
+        models.extend([lr, lr_std_pca, rf, gbm, lgbm])
+        criteria = scorer(MSE)
+        print("Running models...")
+        for model in models:
+            print(f"Running model: {model}")
+            loss = train(model, features, target, criteria=criteria, n_folds=5)
+            show_results(loss, model)
