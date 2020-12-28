@@ -1,0 +1,5 @@
+/data/train_salaries.csv
+/data/train_features.csv
+/data/test_features.csv
+/data/train_folds.csv
+.idea
