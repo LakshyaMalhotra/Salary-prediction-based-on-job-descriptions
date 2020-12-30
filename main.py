@@ -12,7 +12,6 @@ from sklearn import model_selection
 from sklearn import metrics
 from sklearn import preprocessing
 from sklearn import linear_model
-from sklearn import ensemble
 from sklearn import pipeline
 import lightgbm as lgb
 from sklearn import decomposition
@@ -24,7 +23,8 @@ def build_argparser():
     Parse command line arguments
     :return: ArgumentParser
     """
-    parser = ArgumentParser(description="Select the model and various hyperparameters.")
+    parser = ArgumentParser(description="Select the model and various "
+                                        "hyperparameters.")
     parser.add_argument("--model", required=True, help="Model to be used.")
 
     return parser
@@ -163,9 +163,11 @@ def get_feature_df(
     :param num_vars: Numeric variables
     :return: feature dataframe
     """
-    cat_df = pd.get_dummies(df[cat_vars])
+    for cat in cat_vars:
+        df[cat] = df[cat].astype('category')
+        df[cat] = df[cat].cat.codes
+    cat_df = df[cat_vars]
     num_df = df[num_vars].apply(pd.to_numeric)
-
     return pd.concat([cat_df, num_df], axis=1)
 
 
@@ -190,6 +192,7 @@ if __name__ == "__main__":
         features_df = get_feature_df(
             data, cat_vars=categorical_vars, num_vars=numeric_vars
         )
+        # print(features_df)
         features = features_df.values
 
         # define the models
@@ -200,19 +203,9 @@ if __name__ == "__main__":
             decomposition.PCA(),
             linear_model.LinearRegression(),
         )
-        rf = ensemble.RandomForestRegressor(
-            n_estimators=150,
-            n_jobs=-1,
-            max_depth=25,
-            min_samples_split=60,
-            max_features=30,
-            verbose=1,
-        )
-        gbm = ensemble.GradientBoostingRegressor(
-            n_estimators=150, max_depth=5, loss="ls", verbose=1
-        )
-        lgbm = lgb.LGBMRegressor(n_estimators=150, learning_rate=0.5, n_jobs=-1)
-        models.extend([lr, lr_std_pca, rf, gbm, lgbm])
+        lgbm = lgb.LGBMRegressor(n_jobs=-1)
+
+        models.extend([lr, lr_std_pca, lgbm])
         criteria = scorer(MSE)
         print("Running models...")
         for model in models:
