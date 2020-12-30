@@ -15,6 +15,7 @@ from sklearn import linear_model
 from sklearn import pipeline
 import lightgbm as lgb
 from sklearn import decomposition
+import category_encoders as ce
 
 
 # create command line args parser
@@ -23,8 +24,9 @@ def build_argparser():
     Parse command line arguments
     :return: ArgumentParser
     """
-    parser = ArgumentParser(description="Select the model and various "
-                                        "hyperparameters.")
+    parser = ArgumentParser(
+        description="Select the model and various " "hyperparameters."
+    )
     parser.add_argument("--model", required=True, help="Model to be used.")
 
     return parser
@@ -76,7 +78,9 @@ def MSE(
 
 
 # display results
-def show_results(loss: Union[np.ndarray, float], model: Union[str, Callable]) -> None:
+def show_results(
+    loss: Union[np.ndarray, float], model: Union[str, Callable]
+) -> None:
     print(f"Model: {model}")
     print(f"Average MSE: {np.mean(loss)}")
     print(f"Average std: {np.std(loss)}")
@@ -108,7 +112,7 @@ def run_baseline(
     assert len(y_true) == len(y_pred)
 
     loss = MSE(y_true, y_pred)
-    show_results(fold, loss, model)
+    show_results(loss, model)
 
 
 # utility function to return the score
@@ -121,6 +125,19 @@ def scorer(score_fn: Callable) -> Callable:
     """
     # `greater_is_better=False` for MSE, RMSE, etc.
     return metrics.make_scorer(score_fn, greater_is_better=False)
+
+
+# perform some feature engineering
+def target_encode(
+    train_df: pd.DataFrame, valid_df: pd.DataFrame, cat_vars: list, target: str,
+) -> tuple(pd.DataFrame, pd.DataFrame):
+    te = ce.TargetEncoder(verbose=10, cols=cat_vars, smoothing=0.5)
+    train_df_cat_vars = te.fit_transform(train_df[cat_vars], train_df[target])
+    valid_df_cat_vars = te.transform(valid_df[cat_vars])
+    train_df_cat_vars.columns = ["meanSalary_per_" + col for col in cat_vars]
+    valid_df_cat_vars.columns = ["meanSalary_per_" + col for col in cat_vars]
+
+    return train_df_cat_vars, valid_df_cat_vars
 
 
 # calculate loss for each model
@@ -164,7 +181,7 @@ def get_feature_df(
     :return: feature dataframe
     """
     for cat in cat_vars:
-        df[cat] = df[cat].astype('category')
+        df[cat] = df[cat].astype("category")
         df[cat] = df[cat].cat.codes
     cat_df = df[cat_vars]
     num_df = df[num_vars].apply(pd.to_numeric)
@@ -185,30 +202,52 @@ if __name__ == "__main__":
     else:
         # encode the data
         print(f"Encoding data...")
-        categorical_vars = ["companyId", "jobType", "degree", "major", "industry"]
+        categorical_vars = [
+            "companyId",
+            "jobType",
+            "degree",
+            "major",
+            "industry",
+        ]
         numeric_vars = ["yearsExperience", "milesFromMetropolis"]
 
-        target = data.salary.values
-        features_df = get_feature_df(
-            data, cat_vars=categorical_vars, num_vars=numeric_vars
+        fold = 0
+        train_df = data[data["kfold"] != fold].reset_index(drop=True)
+        valid_df = data[data["kfold"] == fold].reset_index(drop=True)
+        print(train_df.head())
+        print(valid_df.head())
+        train_df_te, valid_df_te = engineer_features(
+            train_df,
+            valid_df,
+            cat_vars=categorical_vars,
+            target="salary",
+            num_vars=numeric_vars,
+            target_encoding=True,
         )
-        # print(features_df)
-        features = features_df.values
 
-        # define the models
-        models = []
-        lr = linear_model.LinearRegression()
-        lr_std_pca = pipeline.make_pipeline(
-            preprocessing.StandardScaler(),
-            decomposition.PCA(),
-            linear_model.LinearRegression(),
-        )
-        lgbm = lgb.LGBMRegressor(n_jobs=-1)
-
-        models.extend([lr, lr_std_pca, lgbm])
-        criteria = scorer(MSE)
-        print("Running models...")
-        for model in models:
-            print(f"Running model: {model}")
-            loss = train(model, features, target, criteria=criteria, n_folds=5)
-            show_results(loss, model)
+        print(train_df_te.head())
+        print(valid_df_te.head())
+        # target = data.salary.values
+        # features_df = get_feature_df(
+        #     data, cat_vars=categorical_vars, num_vars=numeric_vars
+        # )
+        # # print(features_df)
+        # features = features_df.values
+        #
+        # # define the models
+        # models = []
+        # lr = linear_model.LinearRegression()
+        # lr_std_pca = pipeline.make_pipeline(
+        #     preprocessing.StandardScaler(),
+        #     decomposition.PCA(),
+        #     linear_model.LinearRegression(),
+        # )
+        # lgbm = lgb.LGBMRegressor(n_jobs=-1)
+        #
+        # models.extend([lr, lr_std_pca, lgbm])
+        # criteria = scorer(MSE)
+        # print("Running models...")
+        # for model in models:
+        #     print(f"Running model: {model}")
+        #     loss = train(model, features, target, criteria=criteria, n_folds=5)
+        #     show_results(loss, model)
