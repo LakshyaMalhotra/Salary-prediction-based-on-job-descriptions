@@ -216,13 +216,8 @@ if __name__ == "__main__":
         valid_df = data[data["kfold"] == fold].reset_index(drop=True)
         print(train_df.head())
         print(valid_df.head())
-        train_df_te, valid_df_te = engineer_features(
-            train_df,
-            valid_df,
-            cat_vars=categorical_vars,
-            target="salary",
-            num_vars=numeric_vars,
-            target_encoding=True,
+        train_df_te, valid_df_te = target_encode(
+            train_df, valid_df, cat_vars=categorical_vars, target="salary",
         )
 
         print(train_df_te.head())
