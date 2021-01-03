@@ -3,6 +3,7 @@ data/train_features.csv
 data/test_features.csv
 data/train_folds.csv
 .idea
+.vscode
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
