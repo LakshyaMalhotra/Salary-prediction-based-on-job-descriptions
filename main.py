@@ -200,49 +200,144 @@ if __name__ == "__main__":
             run_baseline(data, fold=i)
 
     else:
-        # encode the data
-        print(f"Encoding data...")
-        categorical_vars = [
-            "companyId",
-            "jobType",
-            "degree",
-            "major",
-            "industry",
-        ]
-        numeric_vars = ["yearsExperience", "milesFromMetropolis"]
 
-        fold = 0
-        train_df = data[data["kfold"] != fold].reset_index(drop=True)
-        valid_df = data[data["kfold"] == fold].reset_index(drop=True)
-        print(train_df.head())
-        print(valid_df.head())
-        train_df_te, valid_df_te = target_encode(
-            train_df, valid_df, cat_vars=categorical_vars, target="salary",
+        train_features = pd.read_csv(os.path.join(path, "train_features.csv"))
+        train_targets = pd.read_csv(os.path.join(path, "train_salaries.csv"))
+
+        train_df = pd.concat([train_features, train_targets], axis=1)
+        train_df.drop_duplicates(subset="jobId", inplace=True)
+        train_df = train_df[train_df.salary > 0]
+
+        cat_cols = ["companyId", "jobType", "degree", "major", "industry"]
+        num_cols = ["yearsExperience", "milesFromMetropolis"]
+
+        target = train_df.salary
+        feature_df = pd.DataFrame(
+            {
+                "meanSalary": train_df.groupby(cat_cols)["salary"].transform(
+                    "mean"
+                )
+            }
         )
-
-        print(train_df_te.head())
-        print(valid_df_te.head())
-        # target = data.salary.values
-        # features_df = get_feature_df(
-        #     data, cat_vars=categorical_vars, num_vars=numeric_vars
+        feature_df["minSalary"] = train_df.groupby(cat_cols)[
+            "salary"
+        ].transform("min")
+        feature_df["maxSalary"] = train_df.groupby(cat_cols)[
+            "salary"
+        ].transform("max")
+        feature_df["stdSalary"] = train_df.groupby(cat_cols)[
+            "salary"
+        ].transform("std")
+        feature_df["medianSalary"] = train_df.groupby(cat_cols)[
+            "salary"
+        ].transform("median")
+        # feature_df = pd.DataFrame(
+        #     {"meanExp": train_df.groupby(cat_cols)["yearsExperience"].mean()}
         # )
-        # # print(features_df)
-        # features = features_df.values
-        #
-        # # define the models
-        # models = []
-        # lr = linear_model.LinearRegression()
-        # lr_std_pca = pipeline.make_pipeline(
-        #     preprocessing.StandardScaler(),
-        #     decomposition.PCA(),
-        #     linear_model.LinearRegression(),
+        feature_df["meanExp"] = train_df.groupby(cat_cols)[
+            "yearsExperience"
+        ].transform("mean")
+        feature_df["minExp"] = train_df.groupby(cat_cols)[
+            "yearsExperience"
+        ].transform("min")
+        feature_df["maxExp"] = train_df.groupby(cat_cols)[
+            "yearsExperience"
+        ].transform("max")
+        feature_df["stdExp"] = train_df.groupby(cat_cols)[
+            "yearsExperience"
+        ].transform("std")
+        feature_df["medianExp"] = train_df.groupby(cat_cols)[
+            "yearsExperience"
+        ].transform("median")
+        feature_df["minMiles"] = train_df.groupby(cat_cols)[
+            "milesFromMetropolis"
+        ].transform("min")
+        feature_df["maxMiles"] = train_df.groupby(cat_cols)[
+            "milesFromMetropolis"
+        ].transform("max")
+        feature_df["stdMiles"] = train_df.groupby(cat_cols)[
+            "milesFromMetropolis"
+        ].transform("std")
+        feature_df["medianMiles"] = train_df.groupby(cat_cols)[
+            "milesFromMetropolis"
+        ].transform("median")
+        train_df["milesYearsExp"] = (
+            train_df["milesFromMetropolis"] / train_df["yearsExperience"]
+        )
+        # # feature_df["minSalary"] = train_df.groupby(cat_cols)["salary"].min()
+        # # feature_df["maxSalary"] = train_df.groupby(cat_cols)["salary"].max()
+        # # feature_df["stdSalary"] = train_df.groupby(cat_cols)["salary"].std()
+        # # feature_df["medianSalary"] = train_df.groupby(cat_cols)[
+        # #     "salary"
+        # # ].median()
+        # # # feature_df = pd.DataFrame(
+        # # #     {"meanExp": train_df.groupby(cat_cols)["yearsExperience"].mean()}
+        # # # )
+        # # feature_df["meanExp"] = train_df.groupby(cat_cols)[
+        # #     "yearsExperience"
+        # # ].mean()
+        # # feature_df["minExp"] = train_df.groupby(cat_cols)[
+        # #     "yearsExperience"
+        # # ].min()
+        # # feature_df["maxExp"] = train_df.groupby(cat_cols)[
+        # #     "yearsExperience"
+        # # ].max()
+        # # feature_df["stdExp"] = train_df.groupby(cat_cols)[
+        # #     "yearsExperience"
+        # # ].std()
+        # # feature_df["medianExp"] = train_df.groupby(cat_cols)[
+        # #     "yearsExperience"
+        # # ].median()
+        # # feature_df["minMiles"] = train_df.groupby(cat_cols)[
+        # #     "milesFromMetropolis"
+        # # ].min()
+        # # feature_df["maxMiles"] = train_df.groupby(cat_cols)[
+        # #     "milesFromMetropolis"
+        # # ].max()
+        # # feature_df["stdMiles"] = train_df.groupby(cat_cols)[
+        # #     "milesFromMetropolis"
+        # # ].std()
+        # # feature_df["medianMiles"] = train_df.groupby(cat_cols)[
+        # #     "milesFromMetropolis"
+        # # ].median()
+        # print(feature_df.head())
+        # print(feature_df.shape)
+        # # train_df = pd.merge(
+        # #     left=train_df, right=feature_df, how="left", on=cat_cols
+        # # )
+        # train_df = pd.concat([train_df, feature_df], axis=1)
+        # train_df.fillna(0, inplace=True)
+        # print(train_df.head())
+        # print(train_df.shape)
+
+        # for col in cat_cols:
+        #     le = preprocessing.LabelEncoder()
+        #     le.fit(train_df[col])
+        #     train_df[col] = le.transform(train_df[col])
+        # features = train_df.columns
+        # features = [col for col in features if col not in ["jobId", "salary"]]
+        # print(features)
+        # print(train_df[features].head())
+
+        # X_train, X_valid, y_train, y_valid = model_selection.train_test_split(
+        #     train_df[features], target, test_size=0.2, random_state=23
         # )
         # lgbm = lgb.LGBMRegressor(n_jobs=-1)
-        #
-        # models.extend([lr, lr_std_pca, lgbm])
-        # criteria = scorer(MSE)
-        # print("Running models...")
-        # for model in models:
-        #     print(f"Running model: {model}")
-        #     loss = train(model, features, target, criteria=criteria, n_folds=5)
-        #     show_results(loss, model)
+        # rf = ensemble.RandomForestRegressor(
+        #     n_estimators=60,
+        #     n_jobs=-1,
+        #     max_depth=15,
+        #     min_samples_split=80,
+        #     max_features=8,
+        #     verbose=1,
+        # )
+        # # gbm = ensemble.GradientBoostingRegressor(
+        # #     n_estimators=40, max_depth=7, loss="ls", verbose=1
+        # # )
+        # for model in [lgbm, rf]:
+        #     model.fit(X_train, y_train)
+        #     y_pred = model.predict(X_valid)
+
+        #     loss = MSE(y_valid, y_pred)
+        #     show_results(loss, model=model)
+

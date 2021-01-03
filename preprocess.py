@@ -5,7 +5,7 @@ __copyright__ = "Copyright (c) 2020 Lakshya Malhotra"
 
 import os
 import pandas as pd
-from sklearn import preprocessing
+from sklearn import model_selection, preprocessing
 from typing import List
 
 
@@ -46,21 +46,30 @@ class Data:
         train_target_file: str,
         preprocess=True,
         label_encode=True,
+        kfold=False,
     ) -> pd.DataFrame:
         """
         Create and preprocess training data.
         """
+        # load the data from the files
         feature_df = self._load_data(train_feature_file)
         target_df = self._load_data(train_target_file)
         train_df = self._concat_dfs(feature_df, target_df)
+
+        # preprocess the dataframe if flagged
         if preprocess:
             train_df = self._clean_data(
                 train_df, self.unique_var, self.target_var
             )
             train_df = self._shuffle_data(train_df)
+
+        # label encode the dataframe if flagged
         if label_encode:
             self.label_encode_df(train_df, self.cat_vars)
 
+        # create k-fold cross-validation in dataframe if flagged
+        if kfold:
+            train_df = self.create_folds(train_df)
         return train_df
 
     def _create_test_df(
@@ -74,13 +83,6 @@ class Data:
             self.label_encode_df(test_df, self.cat_vars)
 
         return test_df
-
-    def label_encode_df(self, df: pd.DataFrame, cols: list) -> None:
-        for col in cols:
-            if col in self.label_encoders:
-                self._label_encode(df, col, self.label_encoders[col])
-            else:
-                self._label_encode(df, col)
 
     def _label_encode(
         self, df: pd.DataFrame, col: str, le: dict = None
@@ -98,7 +100,8 @@ class Data:
             self.label_encoders[col] = le
 
     def _load_data(self, file_path: str) -> pd.DataFrame:
-        """Load the data from a file.
+        """
+        Load the data from a file.
         """
         df = pd.read_csv(file_path)
         return df
@@ -106,23 +109,53 @@ class Data:
     def _concat_dfs(
         self, feature_df: pd.DataFrame, target_df: pd.DataFrame
     ) -> pd.DataFrame:
-        """Join both feature and target dataframes.
+        """
+        Join both feature and target dataframes.
         """
         return pd.concat([feature_df, target_df], axis=1)
 
     def _clean_data(
         self, df: pd.DataFrame, unique_var: str, target_var: str
     ) -> pd.DataFrame:
-        """Clean the data by removing duplicates and remove rows with negative salary.
+        """
+        Clean the data by removing duplicates and remove rows with negative salary.
         """
         df = df.drop_duplicates(subset=unique_var)
         df = df[df[target_var] > 0]
         return df
 
     def _shuffle_data(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Shuffle the data.
+        """
+        Shuffle the data.
         """
         return df.sample(frac=1).reset_index(drop=True)
+
+    def label_encode_df(self, df: pd.DataFrame, cols: list) -> None:
+        """
+        Label encode the categorical columns.
+        """
+        for col in cols:
+            if col in self.label_encoders:
+                self._label_encode(df, col, self.label_encoders[col])
+            else:
+                self._label_encode(df, col)
+
+    def create_folds(self, df: pd.DataFrame, n_folds: int = 10) -> pd.DataFrame:
+        """
+        Create k-folds for cross-validation.
+        """
+        # create a new column and fill it with -1
+        df["kfold"] = -1
+        df = self._shuffle_data(df)
+
+        # instantiate the kfold cross validation
+        kf = model_selection.KFold(n_splits=n_folds)
+
+        # fill the new kfold column
+        for fold, (_, v_) in enumerate(kf.split(X=df)):
+            df[v_, "kfold"] = fold
+
+        return df
 
 
 class EngineerFeatures:
