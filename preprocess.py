@@ -2,7 +2,6 @@ __author__ = "Lakshya Malhotra"
 __copyright__ = "Copyright (c) 2021 Lakshya Malhotra"
 
 # Import the libraries
-#%%
 import os
 import pandas as pd
 from sklearn import model_selection, preprocessing
@@ -145,8 +144,14 @@ class Data:
 
 
 class EngineerFeatures:
-    def __init__(self, data: Data):
+    def __init__(self, data: Data, n_folds: int = 10):
+        """Engineer new features based on the provided categorical and numeric columns.
+
+        Args:
+            data (Data): Instance of `Data` class.
+        """
         self.data = data
+        self.n_folds = n_folds
         self.cat_vars = data.cat_vars
         self.num_vars = data.num_vars
         self.target = data.target_var
@@ -206,9 +211,7 @@ class EngineerFeatures:
         print(self.data.test_df.head(1))
         print(self.data.test_df.info())
 
-    def _create_folds(
-        self, df: pd.DataFrame, n_folds: int = 10
-    ) -> pd.DataFrame:
+    def _create_folds(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         Create k-folds for cross-validation.
         """
@@ -217,38 +220,10 @@ class EngineerFeatures:
         df = self.data._shuffle_data(df)
 
         # instantiate the kfold cross validation
-        kf = model_selection.KFold(n_splits=n_folds)
+        kf = model_selection.KFold(n_splits=self.n_folds)
 
         # fill the new kfold column
         for fold, (_, v_) in enumerate(kf.split(X=df)):
             df.loc[v_, "kfold"] = fold
 
         return df
-
-
-path = "data/"
-train_feature_file = os.path.join(path, "train_features.csv")
-train_target_file = os.path.join(path, "train_salaries.csv")
-test_file = os.path.join(path, "test_features.csv")
-
-cat_vars = ["companyId", "jobType", "degree", "major", "industry"]
-num_vars = ["yearsExperience", "milesFromMetropolis"]
-target_var = "salary"
-unique_var = "jobId"
-
-data = Data(
-    train_feature_file,
-    train_target_file,
-    test_file,
-    cat_vars=cat_vars,
-    num_vars=num_vars,
-    target_var=target_var,
-    unique_var=unique_var,
-)
-print("Dataframe before feature engineering")
-print(data.train_df.head())
-fe = EngineerFeatures(data)
-fe.add_features(kfold=True)
-print("Dataframe after feature engineering")
-fe.get_df_info()
-print(data.train_df.kfold.value_counts())
