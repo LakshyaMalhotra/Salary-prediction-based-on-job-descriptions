@@ -2,7 +2,7 @@ __author__ = "Lakshya Malhotra"
 __copyright__ = "Copyright (c) 2021 Lakshya Malhotra"
 
 # Import the libraries
-
+#%%
 import os
 import pandas as pd
 from sklearn import model_selection, preprocessing
@@ -70,9 +70,6 @@ class Data:
         if label_encode:
             self.label_encode_df(train_df, self.cat_vars)
 
-        # create k-fold cross-validation in dataframe if flagged
-        if kfold:
-            train_df = self.create_folds(train_df)
         return train_df
 
     def _create_test_df(
@@ -146,23 +143,6 @@ class Data:
             else:
                 self._label_encode(df, col)
 
-    def create_folds(self, df: pd.DataFrame, n_folds: int = 10) -> pd.DataFrame:
-        """
-        Create k-folds for cross-validation.
-        """
-        # create a new column and fill it with -1
-        df["kfold"] = -1
-        df = self._shuffle_data(df)
-
-        # instantiate the kfold cross validation
-        kf = model_selection.KFold(n_splits=n_folds)
-
-        # fill the new kfold column
-        for fold, (_, v_) in enumerate(kf.split(X=df)):
-            df[v_, "kfold"] = fold
-
-        return df
-
 
 class EngineerFeatures:
     def __init__(self, data: Data):
@@ -172,7 +152,7 @@ class EngineerFeatures:
         self.target = data.target_var
         self.groupby_cats = data.train_df.groupby(self.cat_vars)
 
-    def add_features(self) -> None:
+    def add_features(self, kfold=None) -> None:
         """
         Create new features and merge the dataframes to training and test set.
         """
@@ -191,6 +171,11 @@ class EngineerFeatures:
         self.data.train_df = self._merge_new_cols(
             self.data.train_df, feature_df, self.cat_vars
         )
+
+        # create k-fold cross-validation in dataframe if flagged
+        if kfold:
+            self.data.train_df = self._create_folds(self.data.train_df)
+
         # merge the feature dataframe to test set
         self.data.test_df = self._merge_new_cols(
             self.data.test_df, feature_df, self.cat_vars
@@ -213,10 +198,32 @@ class EngineerFeatures:
         return df
 
     def get_df_info(self) -> None:
-        print(self.data.train_df.head())
+        """
+        Get info on the dataframes after feature engineering
+        """
+        print(self.data.train_df.head(1))
         print(self.data.train_df.info())
-        print(self.data.test_df.head())
+        print(self.data.test_df.head(1))
         print(self.data.test_df.info())
+
+    def _create_folds(
+        self, df: pd.DataFrame, n_folds: int = 10
+    ) -> pd.DataFrame:
+        """
+        Create k-folds for cross-validation.
+        """
+        # create a new column and fill it with -1
+        df["kfold"] = -1
+        df = self.data._shuffle_data(df)
+
+        # instantiate the kfold cross validation
+        kf = model_selection.KFold(n_splits=n_folds)
+
+        # fill the new kfold column
+        for fold, (_, v_) in enumerate(kf.split(X=df)):
+            df.loc[v_, "kfold"] = fold
+
+        return df
 
 
 path = "data/"
@@ -241,6 +248,7 @@ data = Data(
 print("Dataframe before feature engineering")
 print(data.train_df.head())
 fe = EngineerFeatures(data)
-fe.add_features()
+fe.add_features(kfold=True)
 print("Dataframe after feature engineering")
 fe.get_df_info()
+print(data.train_df.kfold.value_counts())
