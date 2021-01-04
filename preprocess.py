@@ -2,15 +2,13 @@ __author__ = "Lakshya Malhotra"
 __copyright__ = "Copyright (c) 2021 Lakshya Malhotra"
 
 # Import the libraries
-# %%
+
 import os
 import pandas as pd
-from pandas.core.frame import DataFrame
 from sklearn import model_selection, preprocessing
 from typing import List
 
 # Create data class to load and preprocess the data
-# %%
 class Data:
     def __init__(
         self,
@@ -175,33 +173,52 @@ class EngineerFeatures:
         self.groupby_cats = data.train_df.groupby(self.cat_vars)
 
     def add_features(self) -> None:
+        """
+        Create new features and merge the dataframes to training and test set.
+        """
         feature_df = pd.DataFrame()
         aggs = ["mean", "min", "max", "std", "median"]
+
+        # iterate through all the numeric variables and target
         for col in self.num_vars + [self.data.target_var]:
             for agg in aggs:
                 feature_df[agg + "_" + col] = self._create_groupby_cols(
                     col, agg
                 )
-        feature_df.fillna(0, inplace=True)
-        self.data.train_df = self._concat_new_cols(
-            self.data.train_df, feature_df
+        feature_df.reset_index(inplace=True)
+
+        # merge the feature data frame to training set
+        self.data.train_df = self._merge_new_cols(
+            self.data.train_df, feature_df, self.cat_vars
+        )
+        # merge the feature dataframe to test set
+        self.data.test_df = self._merge_new_cols(
+            self.data.test_df, feature_df, self.cat_vars
         )
 
-    def _create_groupby_cols(self, col: str, agg: str) -> pd.Series:
-        return self.groupby_cats[col].transform(agg)
+    def _create_groupby_cols(self, col: str, agg_name: str) -> pd.Series:
+        """
+        Apply `groupby` on the column `col` with aggregate `agg_name`
+        """
+        return self.groupby_cats[col].agg(agg_name)
 
-    def _concat_new_cols(
-        self, df: pd.DataFrame, features_df: pd.DataFrame
+    def _merge_new_cols(
+        self, df: pd.DataFrame, feature_df: pd.DataFrame, keys: list = None,
     ) -> pd.DataFrame:
-        df = pd.concat([df, features_df], axis=1)
+        """
+        Merge the two dataframes on categorical columns
+        """
+        df = pd.merge(left=df, right=feature_df, how="left", on=keys)
+        df.fillna(0, inplace=True)
         return df
 
     def get_df_info(self) -> None:
         print(self.data.train_df.head())
         print(self.data.train_df.info())
+        print(self.data.test_df.head())
+        print(self.data.test_df.info())
 
 
-# %%
 path = "data/"
 train_feature_file = os.path.join(path, "train_features.csv")
 train_target_file = os.path.join(path, "train_salaries.csv")
@@ -226,6 +243,4 @@ print(data.train_df.head())
 fe = EngineerFeatures(data)
 fe.add_features()
 print("Dataframe after feature engineering")
-print(data.train_df.head())
-
-# %%
+fe.get_df_info()
