@@ -16,11 +16,18 @@ from preprocess import Data, EngineerFeatures
 
 
 class Run:
-    def __init__(self, data: Data, models=None, n_folds: int = 10):
+    def __init__(
+        self,
+        data: Data,
+        models=None,
+        n_folds: int = 10,
+        model_dir: str = "models",
+    ):
         self.models = models
         self.best_model = None
         self.predictions = None
         self.n_folds = n_folds
+        self.model_dir = model_dir
         self.mean_mse = {}
         self.best_loss_fold = np.inf
         self.best_loss_model = np.inf
@@ -43,14 +50,8 @@ class Run:
                 y_true, y_pred = self._run_model_cv(train, valid, model)
                 loss = self._mean_squared_error(y_true, y_pred)
                 print(f"Fold: {fold}, Loss: {loss}")
-                if loss < self.best_loss_fold:
-                    self.best_loss_fold = loss
-                    model_name = (
-                        "lgbm_best.sav"
-                        if model == "LGBMRegressor()"
-                        else f"{model.__name__}_best.sav"
-                    )
-                    joblib.dump(model, model_name)
+                save_message = self._save_model(loss, model)
+                print(save_message)
             model_loss = self.best_loss_fold
             if model_loss < self.best_loss_model:
                 self.best_loss_model = model_loss
@@ -74,6 +75,24 @@ class Run:
         y_pred = model.predict(X_valid)
 
         return y_valid, y_pred
+
+    def _save_model(self, loss, model):
+        if loss < self.best_loss_fold:
+            self.best_loss_fold = loss
+            model_name = (
+                "lgbm_best.sav"
+                if model == lgbm
+                else f"{model.__name__}_best.sav"
+            )
+            model_path = os.path.join(self.model_dir, model_name)
+            message = joblib.dump(model, model_path)
+            if message is not None:
+                return f"Model saved in: {message[0]}"
+
+        return "Loss didn't improve!"
+
+    def _print_stats(self, fold, model, loss, print_message):
+        pass
 
     def select_best_model(self):
         pass
@@ -112,14 +131,11 @@ if __name__ == "__main__":
         target_var=target_var,
         unique_var=unique_var,
     )
-    print("Dataframe before feature engineering")
-    print(data.train_df.head())
-    fe = EngineerFeatures(data, n_folds=3)
+    n_folds = 10
+    fe = EngineerFeatures(data, n_folds=n_folds)
     fe.add_features(kfold=True)
-    print("Dataframe after feature engineering")
-    fe.get_df_info()
 
     lgbm = lgb.LGBMRegressor(n_jobs=-1)
 
-    run = Run(data, models=[lgbm], n_folds=3)
+    run = Run(data, models=[lgbm], n_folds=n_folds)
     run.cross_validate()
