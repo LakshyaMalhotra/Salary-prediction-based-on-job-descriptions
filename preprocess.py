@@ -1,14 +1,16 @@
 __author__ = "Lakshya Malhotra"
-__copyright__ = "Copyright (c) 2020 Lakshya Malhotra"
+__copyright__ = "Copyright (c) 2021 Lakshya Malhotra"
 
 # Import the libraries
-
+# %%
 import os
 import pandas as pd
+from pandas.core.frame import DataFrame
 from sklearn import model_selection, preprocessing
 from typing import List
 
-
+# Create data class to load and preprocess the data
+# %%
 class Data:
     def __init__(
         self,
@@ -16,6 +18,7 @@ class Data:
         train_target_file: str,
         test_file: str,
         cat_vars: List[str],
+        num_vars: List[str],
         target_var: str,
         unique_var: str,
     ):
@@ -26,12 +29,14 @@ class Data:
             train_target_file (str): Path to the training target
             test_file (str): Path to the test data
             cat_vars (list(str)): list of the names of categorical columns
+            num_vars (list(str)): list of the names of numeric columns
             target_var (str): target variable (label)
             unique_var (str): Unique identifier for each training example
 
         """
         self.test_file = test_file
         self.cat_vars = cat_vars
+        self.num_vars = num_vars
         self.target_var = target_var
         self.unique_var = unique_var
         self.label_encoders = {}
@@ -90,6 +95,8 @@ class Data:
         """
         Label encode the dataframe.
         """
+        # if the label_encoder instance already created for the column, just
+        # transform it else fit it first
         if le:
             df[col] = le.transform(df[col])
 
@@ -130,10 +137,11 @@ class Data:
         """
         return df.sample(frac=1).reset_index(drop=True)
 
-    def label_encode_df(self, df: pd.DataFrame, cols: list) -> None:
+    def label_encode_df(self, df: pd.DataFrame, cols: List[str]) -> None:
         """
         Label encode the categorical columns.
         """
+        # iterate through the categorical columns
         for col in cols:
             if col in self.label_encoders:
                 self._label_encode(df, col, self.label_encoders[col])
@@ -159,5 +167,65 @@ class Data:
 
 
 class EngineerFeatures:
-    def __init__(self, data):
-        pass
+    def __init__(self, data: Data):
+        self.data = data
+        self.cat_vars = data.cat_vars
+        self.num_vars = data.num_vars
+        self.target = data.target_var
+        self.groupby_cats = data.train_df.groupby(self.cat_vars)
+
+    def add_features(self) -> None:
+        feature_df = pd.DataFrame()
+        aggs = ["mean", "min", "max", "std", "median"]
+        for col in self.num_vars + [self.data.target_var]:
+            for agg in aggs:
+                feature_df[agg + "_" + col] = self._create_groupby_cols(
+                    col, agg
+                )
+        feature_df.fillna(0, inplace=True)
+        self.data.train_df = self._concat_new_cols(
+            self.data.train_df, feature_df
+        )
+
+    def _create_groupby_cols(self, col: str, agg: str) -> pd.Series:
+        return self.groupby_cats[col].transform(agg)
+
+    def _concat_new_cols(
+        self, df: pd.DataFrame, features_df: pd.DataFrame
+    ) -> pd.DataFrame:
+        df = pd.concat([df, features_df], axis=1)
+        return df
+
+    def get_df_info(self) -> None:
+        print(self.data.train_df.head())
+        print(self.data.train_df.info())
+
+
+# %%
+path = "data/"
+train_feature_file = os.path.join(path, "train_features.csv")
+train_target_file = os.path.join(path, "train_salaries.csv")
+test_file = os.path.join(path, "test_features.csv")
+
+cat_vars = ["companyId", "jobType", "degree", "major", "industry"]
+num_vars = ["yearsExperience", "milesFromMetropolis"]
+target_var = "salary"
+unique_var = "jobId"
+
+data = Data(
+    train_feature_file,
+    train_target_file,
+    test_file,
+    cat_vars=cat_vars,
+    num_vars=num_vars,
+    target_var=target_var,
+    unique_var=unique_var,
+)
+print("Dataframe before feature engineering")
+print(data.train_df.head())
+fe = EngineerFeatures(data)
+fe.add_features()
+print("Dataframe after feature engineering")
+print(data.train_df.head())
+
+# %%
