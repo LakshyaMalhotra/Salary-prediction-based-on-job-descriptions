@@ -29,6 +29,7 @@ class Run:
         self.n_folds = n_folds
         self.model_dir = model_dir
         self.mean_mse = {}
+        self.fold_mse = []
         self.best_loss_fold = np.inf
         self.best_loss_model = np.inf
         self.data = data
@@ -49,9 +50,11 @@ class Run:
                 train, valid = self._get_data(fold)
                 y_true, y_pred = self._run_model_cv(train, valid, model)
                 loss = self._mean_squared_error(y_true, y_pred)
-                print(f"Fold: {fold}, Loss: {loss}")
                 save_message = self._save_model(loss, model)
-                print(save_message)
+                self._print_stats(fold, model, loss, save_message)
+                self.fold_mse.append(loss)
+            self.best_loss_fold = np.inf
+            self.mean_mse[model] = np.mean(self.fold_mse)
             model_loss = self.best_loss_fold
             if model_loss < self.best_loss_model:
                 self.best_loss_model = model_loss
@@ -79,11 +82,7 @@ class Run:
     def _save_model(self, loss, model):
         if loss < self.best_loss_fold:
             self.best_loss_fold = loss
-            model_name = (
-                "lgbm_best.sav"
-                if model == lgbm
-                else f"{model.__name__}_best.sav"
-            )
+            model_name = f"{type(model).__name__}_best.sav"
             model_path = os.path.join(self.model_dir, model_name)
             message = joblib.dump(model, model_path)
             if message is not None:
@@ -91,14 +90,9 @@ class Run:
 
         return "Loss didn't improve!"
 
-    def _print_stats(self, fold, model, loss, print_message):
-        pass
-
     def select_best_model(self):
-        pass
-
-    def select_best_fold(self):
-        pass
+        best_model = min(self.mean_mse, key=self.mean_mse.get)
+        return best_model
 
     def best_model_fit(self):
         pass
@@ -109,6 +103,11 @@ class Run:
     @staticmethod
     def _mean_squared_error(y_true, y_pred):
         return np.mean((y_true - y_pred) ** 2)
+
+    @staticmethod
+    def _print_stats(fold, model, loss, print_message):
+        print(f"Model: {model}, fold: {fold}")
+        print(f"Loss: {loss}, {print_message}")
 
 
 if __name__ == "__main__":
@@ -122,6 +121,7 @@ if __name__ == "__main__":
     target_var = "salary"
     unique_var = "jobId"
 
+    print("Loading and preprocessing data...")
     data = Data(
         train_feature_file,
         train_target_file,
@@ -132,10 +132,22 @@ if __name__ == "__main__":
         unique_var=unique_var,
     )
     n_folds = 10
+    print("Performing feature engineering and creating K-fold CV...")
     fe = EngineerFeatures(data, n_folds=n_folds)
     fe.add_features(kfold=True)
 
     lgbm = lgb.LGBMRegressor(n_jobs=-1)
+    rf = ensemble.RandomForestRegressor(
+        n_estimators=60,
+        n_jobs=-1,
+        max_depth=15,
+        min_samples_split=80,
+        max_features=8,
+    )
 
-    run = Run(data, models=[lgbm], n_folds=n_folds)
+    print("Running models...")
+    run = Run(data, n_folds=n_folds)
+    run.add_model(lgbm)
+    run.add_model(rf)
     run.cross_validate()
+    print(run.select_best_model())

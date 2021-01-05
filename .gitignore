@@ -4,6 +4,7 @@ data/test_features.csv
 data/train_folds.csv
 .idea
 .vscode
+models/RandomForestRegressor_best.sav
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
