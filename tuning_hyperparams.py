@@ -1,5 +1,6 @@
 import os
 import json
+import pprint
 
 from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import train_test_split
@@ -28,9 +29,7 @@ class Optimize:
         X_train, X_valid, y_train, y_valid = train_test_split(
             X, y, test_size=0.2, random_state=23
         )
-        classifier_name = trial.suggest_categorical(
-            "classifier", ["lgbr", "rf"]
-        )
+        classifier_name = trial.suggest_categorical("classifier", ["lgbr"])
         if classifier_name == "lgbr":
             d_train = lgb.Dataset(X_train, label=y_train)
             params = {
@@ -84,6 +83,15 @@ class Optimize:
         with open(os.path.join(path, "best_hyperparams.json"), "w") as f:
             f.write(hyperparams_dict)
 
+    @staticmethod
+    def print_param_stats(best_params, study):
+        print("Best parameters: ")
+        pprint.pprint(best_params, indent=4)
+        od = optuna.importance.get_param_importances(study)
+        print("Parameter importance for the best model: ")
+        for k, v in od.items():
+            pprint.pprint((k, v), indent=4)
+
 
 if __name__ == "__main__":
     path = "data/"
@@ -119,7 +127,4 @@ if __name__ == "__main__":
     best_params_ = study.best_params
 
     opt.write_to_json(model_path, best_params=best_params_)
-    print(f"Best parameters: \n{best_params_}")
-    od = optuna.importance.get_param_importances(study)
-    for k, v in od.items():
-        print(k, v)
+    opt.print_param_stats(best_params_, study=study)
