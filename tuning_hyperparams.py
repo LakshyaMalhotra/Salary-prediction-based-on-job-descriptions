@@ -1,10 +1,8 @@
 import os
 import json
-import pprint
 
 from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import train_test_split
-from sklearn.pipeline import make_pipeline
 from sklearn.ensemble import RandomForestRegressor
 import optuna
 import lightgbm as lgb
@@ -37,7 +35,7 @@ class Optimize:
         )
 
         # randomly select the regressor to use for optimization
-        regressor_name = trial.suggest_categorical("classifier", ["lgbr", "rf"])
+        regressor_name = trial.suggest_categorical("regressor", ["lgbr", "rf"])
 
         # define the respective hyperparameters for each regressor and
         # train the regressor
@@ -47,6 +45,7 @@ class Optimize:
                 "application": "regression",
                 "metric": "mean_squared_error",
                 "verbosity": -1,
+                "n_jobs": -1,
                 "lambda_l1": trial.suggest_float(
                     "lambda_l1", 1e-8, 10.0, log=True
                 ),
@@ -98,8 +97,11 @@ class Optimize:
         Write the best hyperparameters to a JSON file
         """
         hyperparams_dict = json.dumps(best_params)
-        with open(os.path.join(path, "best_hyperparams.json"), "w") as f:
+        path_to_json = os.path.join(path, "best_hyperparams.json")
+        with open(path_to_json, "w") as f:
             f.write(hyperparams_dict)
+
+        return path_to_json
 
     @staticmethod
     def print_param_stats(
@@ -109,11 +111,11 @@ class Optimize:
         Display the results
         """
         print("Best parameters: ")
-        pprint.pprint(best_params, indent=4)
+        print(best_params)
         od = optuna.importance.get_param_importances(study)
         print("Parameter importance for the best model: ")
         for k, v in od.items():
-            pprint.pprint((k, v), indent=4)
+            print(k, v)
 
 
 if __name__ == "__main__":
@@ -152,9 +154,10 @@ if __name__ == "__main__":
 
     # create a study object and start tuning the hyperprameters
     study = optuna.create_study(direction="minimize")
-    study.optimize(opt.optimize, n_trials=10)
+    study.optimize(opt.optimize, n_trials=30)
     best_params_ = study.best_params
 
     # store and display the results
-    opt.write_to_json(model_path, best_params=best_params_)
+    json_path = opt.write_to_json(model_path, best_params=best_params_)
+    print(f"Best params are saved to file: {json_path}")
     opt.print_param_stats(best_params_, study=study)

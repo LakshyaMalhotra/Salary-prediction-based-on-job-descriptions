@@ -1,1 +1,1 @@
-{"classifier": "lgbr", "lambda_l1": 2.4590587162073034, "lambda_l2": 3.686538875674244, "num_leaves": 196, "max_depth": 25, "learning_rate": 0.03686933244006064, "feature_fraction": 0.6712861574632979, "bagging_fraction": 0.6109268097329053, "bagging_freq": 4, "min_child_samples": 89}
+{"regressor": "lgbr", "lambda_l1": 2.10878432394841e-08, "lambda_l2": 3.674766077906094e-05, "num_leaves": 456, "max_depth": 29, "learning_rate": 0.045571190271162146, "feature_fraction": 0.9807664115782702, "bagging_fraction": 0.8409761283752701, "bagging_freq": 2, "min_child_samples": 82}
