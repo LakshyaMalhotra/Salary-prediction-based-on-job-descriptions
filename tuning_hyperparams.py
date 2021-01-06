@@ -1,3 +1,7 @@
+__author__ = "Lakshya Malhotra"
+__copyright__ = "Copyright (c) 2021 Lakshya Malhotra"
+
+# library imports
 import os
 import json
 
@@ -11,7 +15,7 @@ from preprocess import Data, EngineerFeatures
 
 # Optimizer class
 class Optimize:
-    # variable to get the data from the `Data` class
+    # class variable to get the data from the `Data` class
     train_df = None
 
     @staticmethod
