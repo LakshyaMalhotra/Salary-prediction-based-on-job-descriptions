@@ -195,7 +195,7 @@ class Run:
         print(f"Loss: {loss}, {print_message}")
 
 
-if __name__ == "__main__":
+def main():
     # define some input parameters
     path = "data/"
     train_feature_file = os.path.join(path, "train_features.csv")
@@ -220,7 +220,7 @@ if __name__ == "__main__":
     )
 
     # define the number of folds
-    n_folds = 10
+    n_folds = 5
     print("Performing feature engineering and creating K-fold CV...")
     fe = EngineerFeatures(data, n_folds=n_folds)
     fe.add_features(kfold=True)
@@ -245,3 +245,7 @@ if __name__ == "__main__":
     # start cross-validation step
     run.cross_validate()
     print(run.select_best_model())
+
+
+if __name__ == "__main__":
+    main()
