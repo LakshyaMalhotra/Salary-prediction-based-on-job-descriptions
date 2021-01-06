@@ -15,7 +15,7 @@ from sklearn.ensemble import RandomForestRegressor
 from preprocess import Data, EngineerFeatures
 
 
-class Run:
+class Model:
     def __init__(
         self,
         data: Data,
@@ -196,63 +196,81 @@ class Run:
         print(f"Loss: {loss}, {print_message}")
 
 
-def main():
-    # define some input parameters
-    path = "data/"
-    train_feature_file = os.path.join(path, "train_features.csv")
-    train_target_file = os.path.join(path, "train_salaries.csv")
-    test_file = os.path.join(path, "test_features.csv")
-
+class Run:
     cat_vars = ["companyId", "jobType", "degree", "major", "industry"]
     num_vars = ["yearsExperience", "milesFromMetropolis"]
     target_var = "salary"
     unique_var = "jobId"
 
-    # instantiating `Data` object and load the data
-    print("Loading and preprocessing data...")
-    data = Data(
-        train_feature_file,
-        train_target_file,
-        test_file,
-        cat_vars=cat_vars,
-        num_vars=num_vars,
-        target_var=target_var,
-        unique_var=unique_var,
-    )
+    def __init__(
+        self, path: str, model_dir: str, param_file: str, n_folds: int,
+    ):
+        self.path = path
+        self.model_dir = model_dir
+        self.param_file = param_file
+        self.n_folds = n_folds
+        self.train_feature_file = os.path.join(path, "train_features.csv")
+        self.train_target_file = os.path.join(path, "train_salaries.csv")
+        self.test_file = os.path.join(path, "test_features.csv")
 
-    # define the number of folds
-    n_folds = 5
-    print("Performing feature engineering and creating K-fold CV...")
-    fe = EngineerFeatures(data, n_folds=n_folds)
-    fe.add_features(kfold=True)
+    def get_data(self):
+        print("Loading and preprocessing data...")
+        data = Data(
+            self.train_feature_file,
+            self.train_target_file,
+            self.test_file,
+            Run.cat_vars,
+            Run.num_vars,
+            Run.target_var,
+            Run.unique_var,
+        )
+        print("Performing feature engineering and creating K-fold CV...")
+        fe = EngineerFeatures(data, n_folds=self.n_folds)
+        fe.add_features(kfold=True)
 
-    # load the best hyperparameters from a file for LightGBM obtained using optuna
-    with open("models/best_hyperparams.json", "r") as f:
-        params = json.load(f)
+        return data
 
-    params = {k: v for k, v in params.items() if k != "regressor"}
+    def _get_hyperparams(self):
+        print("Loading hyperparameters...")
+        with open(os.path.join(self.model_dir, self.param_file), "r") as f:
+            lgb_params = json.load(f)
+        lgb_params = {k: v for k, v in lgb_params.items() if k != "regressor"}
+        rf_params = {
+            "n_estimators": 60,
+            "max_depth": 15,
+            "min_samples_split": 80,
+            "max_features": 8,
+        }
+        return lgb_params, rf_params
 
-    # define models
-    lgbm = lgb.LGBMRegressor(**params, n_jobs=-1, verbose=-1)
-    rf = RandomForestRegressor(
-        n_estimators=60,
-        n_jobs=-1,
-        max_depth=15,
-        min_samples_split=80,
-        max_features=8,
-    )
+    def _models(self):
+        lgb_params, rf_params = self._get_hyperparams()
+        print("Updating models with hyperparameters...")
+        lgbm = lgb.LGBMRegressor(**lgb_params, n_jobs=-1, verbose=-1)
+        rf = RandomForestRegressor(**rf_params, n_jobs=-1,)
 
-    print("Running models...")
+        return lgbm, rf
 
-    # instantiating `Run` class and add the models to it
-    run = Run(data, n_folds=n_folds)
-    run.add_model(lgbm)
-    run.add_model(rf)
+    def load_models(self):
+        data = self.get_data()
+        model = Model(data, n_folds=self.n_folds)
+        lgbm, rf = self._models()
+        print("Loading models...")
+        model.add_model(lgbm)
+        model.add_model(rf)
 
-    # start cross-validation step
-    run.cross_validate()
-    print(run.select_best_model())
+        return model
+
+    def run_cv(self):
+        model = self.load_models()
+        print("Running cross-validation...")
+        model.cross_validate()
+        print(model.select_best_model())
 
 
 if __name__ == "__main__":
-    main()
+    path = "data/"
+    model_dir = "models/"
+    param_file = "best_hyperparams.json"
+    run = Run(path, model_dir, param_file, n_folds=2)
+    run.run_cv()
