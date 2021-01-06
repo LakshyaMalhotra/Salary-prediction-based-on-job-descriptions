@@ -44,37 +44,35 @@ class Optimize:
         # define the respective hyperparameters for each regressor and
         # train the regressor
         if regressor_name == "lgbr":
-            d_train = lgb.Dataset(X_train, label=y_train)
             params = {
-                "application": "regression",
                 "metric": "mean_squared_error",
                 "verbosity": -1,
                 "n_jobs": -1,
-                "lambda_l1": trial.suggest_float(
-                    "lambda_l1", 1e-8, 10.0, log=True
+                "n_estimators": trial.suggest_int("n_estimators", 100, 200),
+                "reg_alpha": trial.suggest_float(
+                    "reg_alpha", 1e-8, 10.0, log=True
                 ),
-                "lambda_l2": trial.suggest_float(
-                    "lambda_l2", 1e-8, 10.0, log=True
+                "reg_lambda": trial.suggest_float(
+                    "reg_lambda", 1e-8, 10.0, log=True
                 ),
                 "num_leaves": trial.suggest_int("num_leaves", 100, 500),
                 "max_depth": trial.suggest_int("max_depth", 4, 30),
                 "learning_rate": trial.suggest_float(
                     "learning_rate", 0.01, 1.0, log=True
                 ),
-                "feature_fraction": trial.suggest_float(
-                    "feature_fraction", 0.3, 1.0
+                "colsample_bytree": trial.suggest_float(
+                    "colsample_bytree", 0.3, 1.0
                 ),
-                "bagging_fraction": trial.suggest_float(
-                    "bagging_fraction", 0.4, 1.0
-                ),
-                "bagging_freq": trial.suggest_int("bagging_freq", 1, 7),
+                "subsample": trial.suggest_float("subsample", 0.4, 1.0),
+                "subsample_freq": trial.suggest_int("subsample_freq", 1, 7),
                 "min_child_samples": trial.suggest_int(
                     "min_child_samples", 5, 100
                 ),
             }
-            regressor_obj = lgb.train(params, d_train, num_boost_round=150)
+            regressor_obj = lgb.LGBMRegressor(**params)
         else:
             params = {
+                "n_jobs": -1,
                 "n_estimators": trial.suggest_int("n_estimators", 100, 500),
                 "max_depth": trial.suggest_int("max_depth", 4, 30),
                 "max_features": trial.suggest_categorical(
@@ -84,8 +82,10 @@ class Optimize:
                     "min_samples_split", 2, 10
                 ),
             }
-            regressor_obj = RandomForestRegressor(**params, n_jobs=-1)
-            regressor_obj.fit(X_train, y_train)
+            regressor_obj = RandomForestRegressor(**params)
+
+        # fit the regressor on training data
+        regressor_obj.fit(X_train, y_train)
 
         # make predictions on the validation data
         y_pred = regressor_obj.predict(X_valid)

@@ -1,0 +1,1 @@
+{"regressor": "lgbr", "lambda_l1": 2.10878432394841e-08, "lambda_l2": 3.674766077906094e-05, "num_leaves": 456, "max_depth": 29, "learning_rate": 0.045571190271162146, "feature_fraction": 0.9807664115782702, "bagging_fraction": 0.8409761283752701, "bagging_freq": 2, "min_child_samples": 82}
