@@ -11,26 +11,37 @@ import lightgbm as lgb
 
 from preprocess import Data, EngineerFeatures
 
-
+# Optimizer class
 class Optimize:
+    # variable to get the data from the `Data` class
     train_df = None
 
     @staticmethod
-    def optimize(trial):
+    def optimize(trial) -> float:
+        """
+        Optimize the hyperparameters of the regression model and return the 
+        loss for the given trial
+        """
         features = [
             col
             for col in Optimize.train_df.columns
             if col not in ["jobId", "salary"]
         ]
-
+        # get the features and target from the original dataframe
         X = Optimize.train_df.loc[:, features]
         y = Optimize.train_df.salary
 
+        # split features and target into training and validation set
         X_train, X_valid, y_train, y_valid = train_test_split(
             X, y, test_size=0.2, random_state=23
         )
-        classifier_name = trial.suggest_categorical("classifier", ["lgbr"])
-        if classifier_name == "lgbr":
+
+        # randomly select the regressor to use for optimization
+        regressor_name = trial.suggest_categorical("classifier", ["lgbr", "rf"])
+
+        # define the respective hyperparameters for each regressor and
+        # train the regressor
+        if regressor_name == "lgbr":
             d_train = lgb.Dataset(X_train, label=y_train)
             params = {
                 "application": "regression",
@@ -58,7 +69,7 @@ class Optimize:
                     "min_child_samples", 5, 100
                 ),
             }
-            classifier_obj = lgb.train(params, d_train, num_boost_round=150)
+            regressor_obj = lgb.train(params, d_train, num_boost_round=150)
         else:
             params = {
                 "n_estimators": trial.suggest_int("n_estimators", 100, 500),
@@ -70,21 +81,33 @@ class Optimize:
                     "min_samples_split", 2, 10
                 ),
             }
-            classifier_obj = RandomForestRegressor(**params, n_jobs=-1)
-            classifier_obj.fit(X_train, y_train)
-        y_pred = classifier_obj.predict(X_valid)
+            regressor_obj = RandomForestRegressor(**params, n_jobs=-1)
+            regressor_obj.fit(X_train, y_train)
+
+        # make predictions on the validation data
+        y_pred = regressor_obj.predict(X_valid)
+
+        # get the loss from the predictions
         error = mean_squared_error(y_valid, y_pred)
 
         return error
 
     @staticmethod
-    def write_to_json(path, best_params):
+    def write_to_json(path: str, best_params: dict) -> None:
+        """
+        Write the best hyperparameters to a JSON file
+        """
         hyperparams_dict = json.dumps(best_params)
         with open(os.path.join(path, "best_hyperparams.json"), "w") as f:
             f.write(hyperparams_dict)
 
     @staticmethod
-    def print_param_stats(best_params, study):
+    def print_param_stats(
+        best_params: dict, study: optuna.create_study
+    ) -> None:
+        """
+        Display the results
+        """
         print("Best parameters: ")
         pprint.pprint(best_params, indent=4)
         od = optuna.importance.get_param_importances(study)
@@ -94,6 +117,7 @@ class Optimize:
 
 
 if __name__ == "__main__":
+    # define variables
     path = "data/"
     model_path = "models/"
     train_feature_file = os.path.join(path, "train_features.csv")
@@ -106,6 +130,7 @@ if __name__ == "__main__":
     unique_var = "jobId"
 
     print("Loading and preprocessing data...")
+    # instantiate the `Data` class and load the data
     data = Data(
         train_feature_file,
         train_target_file,
@@ -116,15 +141,20 @@ if __name__ == "__main__":
         unique_var=unique_var,
     )
     print("Performing feature engineering and creating K-fold CV...")
+    # perform feature engineering and update the data
     fe = EngineerFeatures(data)
     fe.add_features()
 
+    print("Optimizing the model hyperparameters...")
+    # assign data to the class variable and instantiate the optimizer object
     Optimize.train_df = data.train_df
     opt = Optimize()
 
+    # create a study object and start tuning the hyperprameters
     study = optuna.create_study(direction="minimize")
     study.optimize(opt.optimize, n_trials=10)
     best_params_ = study.best_params
 
+    # store and display the results
     opt.write_to_json(model_path, best_params=best_params_)
     opt.print_param_stats(best_params_, study=study)
