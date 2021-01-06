@@ -78,9 +78,16 @@ class Optimize:
 
         return error
 
+    @staticmethod
+    def write_to_json(path, best_params):
+        hyperparams_dict = json.dumps(best_params)
+        with open(os.path.join(path, "best_hyperparams.json"), "w") as f:
+            f.write(hyperparams_dict)
+
 
 if __name__ == "__main__":
     path = "data/"
+    model_path = "models/"
     train_feature_file = os.path.join(path, "train_features.csv")
     train_target_file = os.path.join(path, "train_salaries.csv")
     test_file = os.path.join(path, "test_features.csv")
@@ -110,10 +117,8 @@ if __name__ == "__main__":
     study = optuna.create_study(direction="minimize")
     study.optimize(opt.optimize, n_trials=10)
     best_params_ = study.best_params
-    hyperparams_dict = json.dumps(best_params_)
-    with open("models/best_hyperparams.json", "w") as f:
-        f.write(hyperparams_dict)
 
+    opt.write_to_json(model_path, best_params=best_params_)
     print(f"Best parameters: \n{best_params_}")
     od = optuna.importance.get_param_importances(study)
     for k, v in od.items():
