@@ -3,14 +3,13 @@ __copyright__ = "Copyright (c) 2021 Lakshya Malhotra"
 
 # Library imports
 import os
-from typing import Tuple
+from typing import Tuple, Union, List
 
 import joblib
 import lightgbm as lgb
 import numpy as np
 import pandas as pd
-from sklearn import ensemble
-from sklearn import linear_model
+from sklearn.ensemble import RandomForestRegressor
 
 from preprocess import Data, EngineerFeatures
 
@@ -19,10 +18,20 @@ class Run:
     def __init__(
         self,
         data: Data,
-        models=None,
+        models: List[Union[RandomForestRegressor, lgb.LGBMRegressor]] = None,
         n_folds: int = 10,
         model_dir: str = "models",
-    ):
+    ) -> None:
+        """Run the models and perform K-fold cross-validation.
+
+        Args:
+        -----
+            data (Data): Instance of `Data` class
+            models (List[Union[RandomForestRegressor, lgb.LGBMRegressor]], optional): 
+                Model to be used, it can be either a sklearn or lightGBM model. Defaults to None.
+            n_folds (int, optional): Number of folds of K-fold cross-validation. Defaults to 10.
+            model_dir (str, optional): Path for saving the models. Defaults to "models".
+        """
         self.models = models
         self.best_model = None
         self.predictions = None
@@ -39,12 +48,18 @@ class Run:
         ]
         self.target = self.data.target_var
 
-    def add_model(self, model):
+    def add_model(
+        self, model: List[Union[RandomForestRegressor, lgb.LGBMRegressor]]
+    ) -> None:
+        """Adds the models to be used in a list. 
+        """
         if self.models is None:
             self.models = []
         self.models.append(model)
 
-    def cross_validate(self):
+    def cross_validate(self) -> None:
+        """Perform the K-fold cross-validation for all the models .
+        """
         for model in self.models:
             for fold in range(self.n_folds):
                 train, valid = self._get_data(fold)
@@ -60,14 +75,40 @@ class Run:
                 self.best_loss_model = model_loss
 
     def _get_data(self, fold: int) -> Tuple[pd.DataFrame, pd.DataFrame]:
+        """Get the data for a given fold.
+
+        Args:
+        -----
+            fold (int): Fold to be used.
+
+        Returns:
+        --------
+            Tuple[pd.DataFrame, pd.DataFrame]: Tuple containing train and validation dataframes.
+        """
         train = self.df[self.df["kfold"] != fold].reset_index(drop=True)
         valid = self.df[self.df["kfold"] == fold].reset_index(drop=True)
 
         return train, valid
 
     def _run_model_cv(
-        self, train: pd.DataFrame, valid: pd.DataFrame, model
-    ) -> Tuple[pd.Series, pd.Series]:
+        self,
+        train: pd.DataFrame,
+        valid: pd.DataFrame,
+        model: List[Union[RandomForestRegressor, lgb.LGBMRegressor]],
+    ) -> Tuple[Union[pd.Series, np.ndarray], Union[pd.Series, np.ndarray]]:
+        """
+        Perform cross-validation step for a given fold and model.
+
+        Args:
+        -----
+            train (pd.DataFrame): Training dataframe
+            valid (pd.DataFrame): Validation dataframe
+            model (List[Union[RandomForestRegressor, lgb.LGBMRegressor]]):
+
+        Returns:
+        --------
+            Tuple[Union[pd.Series, np.ndarray], Union[pd.Series, np.ndarray]]: Tuple containing true and predicted labels.
+        """
         X_train = train[self.features]
         y_train = train[self.target]
 
@@ -79,7 +120,22 @@ class Run:
 
         return y_valid, y_pred
 
-    def _save_model(self, loss, model):
+    def _save_model(
+        self,
+        loss: float,
+        model: List[Union[RandomForestRegressor, lgb.LGBMRegressor]],
+    ) -> str:
+        """Save the model in a binary file.
+
+        Args:
+        -----
+            loss (float): Mean squared error
+            model (List[Union[RandomForestRegressor, lgb.LGBMRegressor]]): model (regressor) object
+
+        Returns:
+        --------
+            str: Save message.
+        """
         if loss < self.best_loss_fold:
             self.best_loss_fold = loss
             model_name = f"{type(model).__name__}_best.sav"
@@ -90,7 +146,15 @@ class Run:
 
         return "Loss didn't improve!"
 
-    def select_best_model(self):
+    def select_best_model(
+        self,
+    ) -> List[Union[RandomForestRegressor, lgb.LGBMRegressor]]:
+        """Select the best model on the basis of mean squared error.
+
+        Returns:
+        --------
+            List[Union[RandomForestRegressor, lgb.LGBMRegressor]]: Model object for the best model.
+        """
         best_model = min(self.mean_mse, key=self.mean_mse.get)
         return best_model
 
@@ -101,16 +165,38 @@ class Run:
         pass
 
     @staticmethod
-    def _mean_squared_error(y_true, y_pred):
+    def _mean_squared_error(
+        y_true: Union[pd.Series, np.ndarray],
+        y_pred: Union[pd.Series, np.ndarray],
+    ) -> float:
+        """Calculate the mean squared error.
+
+        Args:
+        -----
+            y_true (Union[pd.Series, np.ndarray]): Array or series containing actual target.
+            y_pred (Union[pd.Series, np.ndarray]): Array of series containing model predictions.
+
+        Returns:
+        --------
+            float: Mean squared error.
+        """
         return np.mean((y_true - y_pred) ** 2)
 
     @staticmethod
-    def _print_stats(fold, model, loss, print_message):
+    def _print_stats(
+        fold: int,
+        model: List[Union[RandomForestRegressor, lgb.LGBMRegressor]],
+        loss: float,
+        print_message: str,
+    ) -> None:
+        """Print cross-validation results on screen.
+        """
         print(f"Model: {model}, fold: {fold}")
         print(f"Loss: {loss}, {print_message}")
 
 
 if __name__ == "__main__":
+    # define some input parameters
     path = "data/"
     train_feature_file = os.path.join(path, "train_features.csv")
     train_target_file = os.path.join(path, "train_salaries.csv")
@@ -121,6 +207,7 @@ if __name__ == "__main__":
     target_var = "salary"
     unique_var = "jobId"
 
+    # instantiating `Data` object and load the data
     print("Loading and preprocessing data...")
     data = Data(
         train_feature_file,
@@ -131,13 +218,16 @@ if __name__ == "__main__":
         target_var=target_var,
         unique_var=unique_var,
     )
+
+    # define the number of folds
     n_folds = 10
     print("Performing feature engineering and creating K-fold CV...")
     fe = EngineerFeatures(data, n_folds=n_folds)
     fe.add_features(kfold=True)
 
+    # define models
     lgbm = lgb.LGBMRegressor(n_jobs=-1)
-    rf = ensemble.RandomForestRegressor(
+    rf = RandomForestRegressor(
         n_estimators=60,
         n_jobs=-1,
         max_depth=15,
@@ -146,8 +236,12 @@ if __name__ == "__main__":
     )
 
     print("Running models...")
+
+    # instantiating `Run` class and add the models to it
     run = Run(data, n_folds=n_folds)
     run.add_model(lgbm)
     run.add_model(rf)
+
+    # start cross-validation step
     run.cross_validate()
     print(run.select_best_model())
