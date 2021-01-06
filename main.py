@@ -3,6 +3,7 @@ __copyright__ = "Copyright (c) 2021 Lakshya Malhotra"
 
 # Library imports
 import os
+import json
 from typing import Tuple, Union, List
 
 import joblib
@@ -58,7 +59,7 @@ class Run:
         self.models.append(model)
 
     def cross_validate(self) -> None:
-        """Perform the K-fold cross-validation for all the models .
+        """Perform the K-fold cross-validation for all the models.
         """
         for model in self.models:
             for fold in range(self.n_folds):
@@ -225,8 +226,14 @@ def main():
     fe = EngineerFeatures(data, n_folds=n_folds)
     fe.add_features(kfold=True)
 
+    # load the best hyperparameters from a file for LightGBM obtained using optuna
+    with open("models/best_hyperparams.json", "r") as f:
+        params = json.load(f)
+
+    params = {k: v for k, v in params.items() if k != "regressor"}
+
     # define models
-    lgbm = lgb.LGBMRegressor(n_jobs=-1)
+    lgbm = lgb.LGBMRegressor(**params, n_jobs=-1, verbose=-1)
     rf = RandomForestRegressor(
         n_estimators=60,
         n_jobs=-1,
