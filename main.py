@@ -41,11 +41,15 @@ class Model:
         self.mean_mse = {}
         self.fold_mse = []
         self.best_loss_fold = np.inf
-        self.best_loss_model = np.inf
+        self.best_model = None
+        self.predictions = None
         self.data = data
-        self.df = data.train_df
+        self.train_df = data.train_df
+        self.test_df = data.test_df
         self.features = [
-            col for col in self.df.columns if col not in ["jobId", "salary"]
+            col
+            for col in self.train_df.columns
+            if col not in ["jobId", "salary", "kfold"]
         ]
         self.target = self.data.target_var
 
@@ -71,9 +75,6 @@ class Model:
                 self.fold_mse.append(loss)
             self.best_loss_fold = np.inf
             self.mean_mse[model] = np.mean(self.fold_mse)
-            model_loss = self.best_loss_fold
-            if model_loss < self.best_loss_model:
-                self.best_loss_model = model_loss
 
     def _get_data(self, fold: int) -> Tuple[pd.DataFrame, pd.DataFrame]:
         """Get the data for a given fold.
@@ -86,8 +87,12 @@ class Model:
         --------
             Tuple[pd.DataFrame, pd.DataFrame]: Tuple containing train and validation dataframes.
         """
-        train = self.df[self.df["kfold"] != fold].reset_index(drop=True)
-        valid = self.df[self.df["kfold"] == fold].reset_index(drop=True)
+        train = self.train_df[self.train_df["kfold"] != fold].reset_index(
+            drop=True
+        )
+        valid = self.train_df[self.train_df["kfold"] == fold].reset_index(
+            drop=True
+        )
 
         return train, valid
 
@@ -108,7 +113,8 @@ class Model:
 
         Returns:
         --------
-            Tuple[Union[pd.Series, np.ndarray], Union[pd.Series, np.ndarray]]: Tuple containing true and predicted labels.
+            Tuple[Union[pd.Series, np.ndarray], Union[pd.Series, np.ndarray]]: 
+            Tuple containing true and predicted labels.
         """
         X_train = train[self.features]
         y_train = train[self.target]
@@ -147,23 +153,38 @@ class Model:
 
         return "Loss didn't improve!"
 
-    def select_best_model(
-        self,
-    ) -> List[Union[RandomForestRegressor, lgb.LGBMRegressor]]:
+    def select_best_model(self) -> None:
         """Select the best model on the basis of mean squared error.
-
-        Returns:
-        --------
-            List[Union[RandomForestRegressor, lgb.LGBMRegressor]]: Model object for the best model.
         """
-        best_model = min(self.mean_mse, key=self.mean_mse.get)
-        return best_model
+        self.best_model = min(self.mean_mse, key=self.mean_mse.get)
 
-    def best_model_fit(self):
-        pass
+    def best_model_fit(self) -> None:
+        """Fit the training data with the best model.
+        """
+        self.best_model.fit(
+            self.train_df[self.features], self.train_df[self.target]
+        )
 
-    def best_model_prediction(self):
-        pass
+    def best_model_predictions(self, save_predictions: bool = True) -> None:
+        """Make predictions from the fitted model and save the predictions to a 
+        CSV file.
+
+        Args:
+        -----
+            save_predictions (bool): Whether to save predictions to a file. 
+            Defaults to True.
+        """
+        self.predictions = self.best_model.predict(self.test_df[self.features])
+
+        if save_predictions:
+            job_ids = self.test_df["jobId"]
+            assert len(job_ids) == len(self.predictions)
+            results = pd.DataFrame(
+                {"jobId": job_ids, "predicted_salary": self.predictions}
+            )
+            results.to_csv(
+                os.path.join(self.model_dir, "predictions.csv"), index=False
+            )
 
     @staticmethod
     def _mean_squared_error(
@@ -328,7 +349,13 @@ class Run:
         model = self.load_models()
         print("Running cross-validation...")
         model.cross_validate()
-        print(model.select_best_model())
+
+        # print the best models
+        print(model.best_model())
+
+        # fit the best model on the test data and make predictions
+        model.best_model_fit()
+        model.best_model_predictions()
 
 
 if __name__ == "__main__":
