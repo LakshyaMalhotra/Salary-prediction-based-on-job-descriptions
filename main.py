@@ -197,6 +197,7 @@ class Model:
 
 
 class Run:
+    # defining some class variables
     cat_vars = ["companyId", "jobType", "degree", "major", "industry"]
     num_vars = ["yearsExperience", "milesFromMetropolis"]
     target_var = "salary"
@@ -209,6 +210,17 @@ class Run:
         n_folds: int = 10,
         param_file: str = None,
     ):
+        """Utility class to load models and their hyperparams and perform 
+        cross-validation.
+
+        Args:
+        -----
+            path (str): Path to the data directory.
+            model_dir (str): Path to the saved models.
+            n_folds (int, optional): Number of cross-validation folds. Defaults to 10.
+            param_file (str, optional): Name of the file storing best hyperparamters 
+            of the model . Defaults to None.
+        """
         self.path = path
         self.model_dir = model_dir
         self.param_file = param_file
@@ -217,7 +229,18 @@ class Run:
         self.train_target_file = os.path.join(path, "train_salaries.csv")
         self.test_file = os.path.join(path, "test_features.csv")
 
-    def get_data(self, kfold=True):
+    def get_data(self, kfold: bool = True) -> Data:
+        """Instantiate the data class and perform feature engineering.
+
+        Args:
+        -----
+            kfold (bool, optional): Whether to perform cross-validation. Should 
+            be set to `False` while doing hyperparameter tuning. Defaults to True.
+
+        Returns:
+        --------
+            Data: Instance of the `Data` class
+        """
         print("Loading and preprocessing data...")
         data = Data(
             self.train_feature_file,
@@ -234,11 +257,22 @@ class Run:
 
         return data
 
-    def _get_hyperparams(self):
+    def _get_hyperparams(self) -> Tuple[dict, dict]:
+        """Load the optimized hyperparameters from a file for LightGBM model and 
+        define parameter dict for Random forest.
+
+        Returns:
+        --------
+            Tuple[dict, dict]: Dictionaries containing hyperparameters for the models.
+        """
         print("Loading hyperparameters...")
         with open(os.path.join(self.model_dir, self.param_file), "r") as f:
             lgb_params = json.load(f)
+
+        # remove the regressor name from the dictionary
         lgb_params = {k: v for k, v in lgb_params.items() if k != "regressor"}
+
+        # define parameters for random forest
         rf_params = {
             "n_estimators": 60,
             "max_depth": 15,
@@ -248,25 +282,49 @@ class Run:
         }
         return lgb_params, rf_params
 
-    def _models(self):
+    def _models(self) -> Tuple[lgb.LGBMRegressor, RandomForestRegressor]:
         lgb_params, rf_params = self._get_hyperparams()
         print("Updating models with hyperparameters...")
+
+        # define model objects`
         lgbm = lgb.LGBMRegressor(**lgb_params,)
         rf = RandomForestRegressor(**rf_params)
 
         return lgbm, rf
 
-    def load_models(self):
+    def load_models(self, add_more_models=None) -> Model:
+        """`Load the models and data to `Model` class. More models can be added 
+        by the keyword argument `add_more_models`.
+
+        Args:
+        -----
+            add_more_models (model_objects, optional): Add more models. Defaults to None.
+
+        Returns:
+        --------
+            Model: Instance of `Model` class.
+        """
+        # get the `Data` instance
         data = self.get_data()
+
+        # define the model instance
         model = Model(data, n_folds=self.n_folds)
+
+        # get the models and add them to the `Model` instance
         lgbm, rf = self._models()
         print("Loading models...")
         model.add_model(lgbm)
         model.add_model(rf)
 
+        # add more models if available
+        if add_more_models is not None:
+            model.add_model(add_more_models)
+
         return model
 
-    def run_cv(self):
+    def run_cv(self) -> None:
+        """Perform the cross-validation.
+        """
         model = self.load_models()
         print("Running cross-validation...")
         model.cross_validate()

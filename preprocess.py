@@ -22,6 +22,7 @@ class Data:
         """Data class to load and preprocess the data.
 
         Args:
+        -----
             train_feature_file (str): Path to the training features
             train_target_file (str): Path to the training target
             test_file (str): Path to the test data
@@ -148,6 +149,7 @@ class EngineerFeatures:
         """Engineer new features based on the provided categorical and numeric columns.
 
         Args:
+        -----
             data (Data): Instance of `Data` class.
         """
         self.data = data
