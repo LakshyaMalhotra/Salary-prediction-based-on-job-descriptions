@@ -38,3 +38,39 @@ These cases need to be pre-precessed (imputation or removal of records) before g
 It is found that the data is pretty much clean with no duplicate or missing values. There are, however, 5 training records with zero salary, they are not very interesting to us so we just removed them.
 
 ### Data Visualization
+Visualization part of the data involves the visualizing the trends and summaries of various features and target variable and to plot their correlation with each other. Let's start with the target variable first:
+
+__1. Target variable: `salary`__
+
+![target](assets/salary_distribution.png)
+
+As we can see, salary is slightly right skewed which should not be surprising since there are only a handful of people with very high salaries in a typical salary distribution. Most of the salaries are located in around the range 85-140 with the median value of about 115. Also, the mean and the median values are almost coinciding meaning the distribution is almost symmetrical.
+
+We will explore the numeric features now.
+
+__2. `yearsExperience`__
+
+![yearsExp](assets/years_exp.png)
+Apart from relatively small fluctuations, data is almost evenly distributed between the unique values of the `yearsExperience`. There are only 25 unique integer values for this feature, meaning, it might as well be considered as an ordinal categorical variable. We kept it as a numeric variable though since there is a non-zero positive correlation between `salary` and `yearsExperience` as shown by the right plot above.
+
+
+__3. `milesFromMetropolis`__
+
+![miles](assets/miles_from_metropolis.png)
+Again, we can clearly see that data is pretty much evenly distributed between all the values of `milesFromMetropolis`. Interestingly the salaries decrease as we move farther from the big cities. This might be due to the fact that bigger cities have higher cost of living so the companies there pay you more.
+
+We will continue our analysis with the categorical features now.
+
+__4. `degree`__
+
+![degree](assets/degree.png)
+The corresponding data table for the target variable for the unique values for this feature looks like:
+| degree | mean | count |
+| :---: | :---: | :---: |
+| BACHELORS | 125.45 | 175495 |
+| DOCTORAL	| 135.50 | 175362 |
+| HIGH_SCHOOL | 101.92 | 236975 |
+| MASTERS | 130.51 | 175310 |
+| NONE | 98.176882 | 236853 |
+
+We can easily infer that advanced degrees like Ph.D. and masters indeed help in getting big salaries. There is a category with name `NONE` in this feature. This is probably those records for which the `degree` is not reported.
