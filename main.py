@@ -211,10 +211,36 @@ class Model:
         loss: float,
         print_message: str,
     ) -> None:
-        """Print cross-validation results on screen.
+        """Print results on screen on each step of cross-validation.
         """
         print(f"Model: {model}, fold: {fold}")
         print(f"Loss: {loss}, {print_message}")
+
+    def get_feature_importances(self) -> pd.DataFrame:
+        """Calculate the feature importances for all the models.
+        """
+        # create dataframe to store feature importances
+        feature_importances = pd.DataFrame({"feature": self.features})
+
+        # iterate through all the models
+        for model in self.models:
+            if hasattr(model, "feature_importances_"):
+                importances = model.feature_importances_
+                feature_importances[
+                    f"{type(model).__name__}_importance"
+                ] = importances
+            else:
+                continue
+        feature_importances.sort_values(
+            by="LGBMRegressor_importance", ascending=False, inplace=True
+        )
+        feature_importances.set_index("feature", inplace=True, drop=True)
+
+        # return importance dataframe if exists
+        if len(feature_importances.columns) == 0:
+            return "Feature importances do not exist for any of the models."
+        else:
+            return feature_importances
 
 
 class Run:
@@ -351,11 +377,16 @@ class Run:
         model.cross_validate()
 
         # print the best models
-        print(model.best_model())
+        print(model.best_model)
 
         # fit the best model on the test data and make predictions
+        model.select_best_model()
         model.best_model_fit()
         model.best_model_predictions()
+
+        # get the feature importances
+        df = model.get_feature_importances()
+        print(df)
 
 
 if __name__ == "__main__":
