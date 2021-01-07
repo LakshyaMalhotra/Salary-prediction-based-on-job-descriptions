@@ -20,10 +20,6 @@ import seaborn as sns
 sns.set_style("whitegrid")
 sns.set_palette("deep")
 
-plt.rcParams["xtick.labelsize"] = 14
-plt.rcParams["ytick.labelsize"] = 14
-plt.rcParams["axes.titlesize"] = 18
-
 
 class Model:
     def __init__(
@@ -246,6 +242,11 @@ class Model:
         )
         feature_importances.set_index("feature", inplace=True, drop=True)
 
+        # Normalize LightGBM feature importances
+        feature_importances["LGBMRegressor_importance"] = (
+            feature_importances["LGBMRegressor_importance"]
+            / feature_importances["LGBMRegressor_importance"].sum()
+        )
         # return importance dataframe if exists
         if len(feature_importances.columns) == 0:
             return "Feature importances do not exist for any of the models."
@@ -262,19 +263,14 @@ class Model:
             various models.
         """
         cols = df.columns.tolist()
-        fig, ax = plt.subplots(1, len(cols), sharey=True, figsize=(14, 10))
+        fig, ax = plt.subplots(1, len(cols), sharey=True, figsize=(14, 8))
         y = df.index
         x0 = df.loc[:, cols[0]]
         sns.barplot(x=x0, y=y, ec="k", alpha=0.6, ax=ax[0])
-        ax[0].set_xlabel("importances", fontsize=16)
-        ax[0].set_ylabel("features", fontsize=16)
-        ax[0].set_title(cols[0])
 
         x1 = df.loc[:, cols[1]]
         sns.barplot(x=x1, y=y, ec="k", alpha=0.6, ax=ax[1])
-        ax[1].set_xlabel("importances", fontsize=16)
-        ax[1].set_ylabel("")
-        ax[1].set_title(cols[1])
+        plt.suptitle("Feature Importances", fontsize=18)
         plt.tight_layout()
         plt.show()
 
