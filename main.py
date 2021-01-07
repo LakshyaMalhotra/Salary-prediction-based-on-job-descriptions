@@ -203,7 +203,11 @@ class Run:
     unique_var = "jobId"
 
     def __init__(
-        self, path: str, model_dir: str, param_file: str, n_folds: int,
+        self,
+        path: str,
+        model_dir: str,
+        n_folds: int = 10,
+        param_file: str = None,
     ):
         self.path = path
         self.model_dir = model_dir
@@ -213,7 +217,7 @@ class Run:
         self.train_target_file = os.path.join(path, "train_salaries.csv")
         self.test_file = os.path.join(path, "test_features.csv")
 
-    def get_data(self):
+    def get_data(self, kfold=True):
         print("Loading and preprocessing data...")
         data = Data(
             self.train_feature_file,
@@ -226,7 +230,7 @@ class Run:
         )
         print("Performing feature engineering and creating K-fold CV...")
         fe = EngineerFeatures(data, n_folds=self.n_folds)
-        fe.add_features(kfold=True)
+        fe.add_features(kfold=kfold)
 
         return data
 
@@ -240,14 +244,15 @@ class Run:
             "max_depth": 15,
             "min_samples_split": 80,
             "max_features": 8,
+            "n_jobs": -1,
         }
         return lgb_params, rf_params
 
     def _models(self):
         lgb_params, rf_params = self._get_hyperparams()
         print("Updating models with hyperparameters...")
-        lgbm = lgb.LGBMRegressor(**lgb_params, n_jobs=-1, verbose=-1)
-        rf = RandomForestRegressor(**rf_params, n_jobs=-1,)
+        lgbm = lgb.LGBMRegressor(**lgb_params,)
+        rf = RandomForestRegressor(**rf_params)
 
         return lgbm, rf
 
@@ -272,5 +277,5 @@ if __name__ == "__main__":
     path = "data/"
     model_dir = "models/"
     param_file = "best_hyperparams.json"
-    run = Run(path, model_dir, param_file, n_folds=2)
+    run = Run(path, model_dir, n_folds=2, param_file=param_file)
     run.run_cv()

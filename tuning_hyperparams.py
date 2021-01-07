@@ -12,6 +12,7 @@ import optuna
 import lightgbm as lgb
 
 from preprocess import Data, EngineerFeatures
+from main import Run
 
 # Optimizer class
 class Optimize:
@@ -126,30 +127,10 @@ if __name__ == "__main__":
     # define variables
     path = "data/"
     model_path = "models/"
-    train_feature_file = os.path.join(path, "train_features.csv")
-    train_target_file = os.path.join(path, "train_salaries.csv")
-    test_file = os.path.join(path, "test_features.csv")
 
-    cat_vars = ["companyId", "jobType", "degree", "major", "industry"]
-    num_vars = ["yearsExperience", "milesFromMetropolis"]
-    target_var = "salary"
-    unique_var = "jobId"
-
-    print("Loading and preprocessing data...")
-    # instantiate the `Data` class and load the data
-    data = Data(
-        train_feature_file,
-        train_target_file,
-        test_file,
-        cat_vars=cat_vars,
-        num_vars=num_vars,
-        target_var=target_var,
-        unique_var=unique_var,
-    )
-    print("Performing feature engineering and creating K-fold CV...")
-    # perform feature engineering and update the data
-    fe = EngineerFeatures(data)
-    fe.add_features()
+    # create a `Run` instance and get data
+    run = Run(path=path, model_dir=model_path)
+    data = run.get_data(kfold=False)
 
     print("Optimizing the model hyperparameters...")
     # assign data to the class variable and instantiate the optimizer object
@@ -158,7 +139,7 @@ if __name__ == "__main__":
 
     # create a study object and start tuning the hyperprameters
     study = optuna.create_study(direction="minimize")
-    study.optimize(opt.optimize, n_trials=30)
+    study.optimize(opt.optimize, n_trials=15)
     best_params_ = study.best_params
 
     # store and display the results
