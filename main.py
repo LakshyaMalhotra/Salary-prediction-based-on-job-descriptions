@@ -4,6 +4,7 @@ __copyright__ = "Copyright (c) 2021 Lakshya Malhotra"
 # library imports
 import os
 import json
+from argparse import ArgumentParser
 from typing import Tuple, Union, List
 
 import joblib
@@ -19,6 +20,45 @@ import seaborn as sns
 # plot formatting options
 sns.set_style("whitegrid")
 sns.set_palette("deep")
+
+
+def build_argparser() -> ArgumentParser:
+    """Parse command line arguments.
+
+    Returns:
+    --------
+        ArgumentParser: Parser object to parse command line args.
+    """
+    parser = ArgumentParser(
+        description="Add arguments needed to run the models."
+    )
+    parser.add_argument(
+        "--n_folds",
+        required=True,
+        type=int,
+        default=5,
+        help="Number of cross-validation folds.",
+    )
+    parser.add_argument(
+        "--data_dir",
+        required=True,
+        type=str,
+        help="Path to the data directory.",
+    )
+    parser.add_argument(
+        "--model_dir",
+        required=True,
+        type=str,
+        help="Path to the models directory.",
+    )
+    parser.add_argument(
+        "--params",
+        required=True,
+        type=str,
+        help="Path to the file containing optimized hyperparameters.",
+    )
+
+    return parser
 
 
 class Model:
@@ -436,8 +476,10 @@ class Run:
 
 
 if __name__ == "__main__":
-    path = "data/"
-    model_dir = "models/"
-    param_file = "best_hyperparams.json"
-    run = Run(path, model_dir, n_folds=2, param_file=param_file)
+    args = build_argparser().parse_args()
+    path = args.data_dir
+    model_dir = args.model_dir
+    param_file = args.params
+    n_folds = args.n_folds
+    run = Run(path, model_dir, n_folds=n_folds, param_file=param_file)
     run.run_cv()
