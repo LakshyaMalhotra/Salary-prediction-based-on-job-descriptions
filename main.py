@@ -1,7 +1,7 @@
 __author__ = "Lakshya Malhotra"
 __copyright__ = "Copyright (c) 2021 Lakshya Malhotra"
 
-# Library imports
+# library imports
 import os
 import json
 from typing import Tuple, Union, List
@@ -13,6 +13,16 @@ import pandas as pd
 from sklearn.ensemble import RandomForestRegressor
 
 from preprocess import Data, EngineerFeatures
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# plot formatting options
+sns.set_style("whitegrid")
+sns.set_palette("deep")
+
+plt.rcParams["xtick.labelsize"] = 14
+plt.rcParams["ytick.labelsize"] = 14
+plt.rcParams["axes.titlesize"] = 18
 
 
 class Model:
@@ -242,6 +252,50 @@ class Model:
         else:
             return feature_importances
 
+    @staticmethod
+    def plot_feature_importance(df: pd.DataFrame) -> None:
+        """Plot the feature importances
+
+        Args:
+        -----
+            df (pd.DataFrame): Dataframe containing feature importances from 
+            various models.
+        """
+        cols = df.columns.tolist()
+        fig, ax = plt.subplots(1, len(cols), sharey=True, figsize=(14, 10))
+        y = df.index
+        x0 = df.loc[:, cols[0]]
+        sns.barplot(x=x0, y=y, ec="k", alpha=0.6, ax=ax[0])
+        ax[0].set_xlabel("importances", fontsize=16)
+        ax[0].set_ylabel("features", fontsize=16)
+        ax[0].set_title(cols[0])
+
+        x1 = df.loc[:, cols[1]]
+        sns.barplot(x=x1, y=y, ec="k", alpha=0.6, ax=ax[1])
+        ax[1].set_xlabel("importances", fontsize=16)
+        ax[1].set_ylabel("")
+        ax[1].set_title(cols[1])
+        plt.tight_layout()
+        plt.show()
+
+    def print_summary(self) -> None:
+        """Print model summaries, best model, and feature importances.
+        """
+        print("Model summaries:")
+        # print MSE for each model
+        for model in self.mean_mse:
+            print(f"  {type(model).__name__}-MSE: {self.mean_mse[model]}")
+
+        print(f"Best model: {self.best_model}")
+
+        # get the feature importances dataframe and print it
+        df = self.get_feature_importances()
+        print("Feature importances:")
+        print(df.head())
+
+        # plot the feature importances
+        Model.plot_feature_importance(df)
+
 
 class Run:
     # defining some class variables
@@ -376,17 +430,13 @@ class Run:
         print("Running cross-validation...")
         model.cross_validate()
 
-        # print the best models
-        print(model.best_model)
-
         # fit the best model on the test data and make predictions
         model.select_best_model()
         model.best_model_fit()
         model.best_model_predictions()
 
-        # get the feature importances
-        df = model.get_feature_importances()
-        print(df)
+        # plot the summary stats
+        model.print_summary()
 
 
 if __name__ == "__main__":
