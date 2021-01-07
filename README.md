@@ -25,7 +25,7 @@ Following datasets are provided for this project in the CSV format:
 - `train_salaries.csv`: Dataset containing the target variable (`salary`) for each job listing of the `train_features.csv`.
 - `test_features.csv`: The unseen job listings missing the target variable. Our goal is to predict the salary for these 1 million records.
 
-All of this data is available in the [data](data/) directory. 
+All of this data is available in the data directory (_not included in the repo_). 
 The `train_features.csv` and `train_salaries.csv` files are loaded as pandas dataframe and merged together in a single dataframe
 
 ### Data Cleaning
