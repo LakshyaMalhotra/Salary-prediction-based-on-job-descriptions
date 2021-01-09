@@ -106,6 +106,7 @@ __6. `major`__
 | MATH | 133.322042 | 57800 |
 | NONE | 102.583864 | 532353 |
 | PHYSICS | 130.372436 | 58410 |
+
 Listings with majors like Engineering, Business and Maths have high salaries. There is a category called `None` which probably means either it is not reported or the major is not any of the listed categories.
 
 __7. `industry`__
@@ -120,6 +121,7 @@ __7. `industry`__
 | OIL | 130.953863 | 142770 |
 | SERVICE | 104.446820 | 142639 |
 | WEB | 121.645362 | 143205 |
+
 The dataset is also almost uniformly distributed between various industries. Oil and Finance sector pay their employees more salaries as compared to other industries.
 
 __8. `companyId`__
@@ -127,6 +129,14 @@ __8. `companyId`__
 ![company](assets/company_id.png)
 The above plot shows the median salaries of all the 63 unique companies. Most of the companies have their median salary of about 114k.
 
+### Correlation Plots
+One important step to understand the association of the features with the target is to estimate correlations. We calculated the correlations of the categorical columns by encoding the mean target values grouped by that particluar feature and the corresponding correlation plot looks like-
+
+![correlation_original](assets/corr_heatmap_original.png)
+
+It looks like `jobType` has the biggest correlation with the target. We will actually use this for our baseline model.
+
+## Baseline Model
 ## Feature Engineering
 Feature engineering is a big part of the machine learning workflow. It can lead to the drastic improvements in the performance metrics and it is an essential skill to have. Type of features generated depends a lot on the domain knowledge of the individual and different features can affect differently. This is the place where I spent most of my time on while working on this project. After brain-storming with a couple of ideas, I used the following extra-features along with the original ones:
 
