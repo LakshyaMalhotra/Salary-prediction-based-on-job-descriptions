@@ -125,4 +125,39 @@ The dataset is also almost uniformly distributed between various industries. Oil
 __8. `companyId`__
 
 ![company](assets/company_id.png)
-The above plot shows the median salaries of all the 63 unique companies. Most of the companies have their median salary of about 114k.  
+The above plot shows the median salaries of all the 63 unique companies. Most of the companies have their median salary of about 114k.
+
+## Feature Engineering
+Feature engineering is a big part of the machine learning workflow. It can lead to the drastic improvements in the performance metrics and it is an essential skill to have. Type of features generated depends a lot on the domain knowledge of the individual and different features can affect differently. This is the place where I spent most of my time on while working on this project. After brain-storming with a couple of ideas, I used the following extra-features along with the original ones:
+
+1. `mean`, `min`, `max`, `std`, `median` of `salary` grouped by all the categorical columns.
+2. `mean`, `min`, `max`, `std`, `median` of `yearsExperience` grouped by all the categorical columns.
+3. `mean`, `min`, `max`, `std`, `median` of `milesFromMetropolis` grouped by all the categorical columns.
+
+The corresponding correlation plot looks like this:
+
+![correlation](assets/corr_heatmap.png)
+
+The following table summarizes the correlation of each feature with target `salary`:
+| feature | correlation |
+| :---: | :---: |
+| `yearsExperience` | 0.375013 |
+| `milesFromMetropolis` | -0.297686 |
+| `mean_salary` | 0.755125 |
+| `max_salary` | 0.587387 |
+| `min_salary` | 0.698254 |
+| `std_salary` | 0.337293 |
+| `median_salary` | 0.744016 |
+| `mean_yearsExperience` | 0.113453 |
+| `max_yearsExperience` | -0.150344 |
+| `min_yearsExperience` | 0.257622 |
+| `median_yearsExperience` | 0.102039 |
+| `max_milesFromMetropolis` | -0.262282 |
+| `min_milesFromMetropolis` | 0.172798 |
+
+As we can see, `mean_salary` and `median_salary` has the largest magnitude of the correlation with target. This should not be surprising because every feature with suffix `_salary` is a result of some aggregate function based on target grouped by all categorical columns. In other words, all of the features with suffix `_salary` has some information about the `salary`. This looks really good but there's a big caveat: __although these feature will really help bringing the `mean_squared_error` (MSE) down for the training and validation set but they will result in poor generalization error__. The model will will overfit the validation set but will have a large MSE on the test set. This is called _data leakage_. To see its effect, we analyzed the model performance _with_ and _without_ these columns on 10-fold cross-validation and the results are shown in the following table (results rounded off to the nearest integer):
+
+| mean MSE with `*_salary` features | mean MSE without `*_salary` features |
+| :---: | :---: | 
+| 292 | 355 |
+
