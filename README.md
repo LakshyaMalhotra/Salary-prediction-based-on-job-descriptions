@@ -130,13 +130,23 @@ __8. `companyId`__
 The above plot shows the median salaries of all the 63 unique companies. Most of the companies have their median salary of about 114k.
 
 ### Correlation Plots
-One important step to understand the association of the features with the target is to estimate correlations. We calculated the correlations of the categorical columns by encoding the mean target values grouped by that particluar feature and the corresponding correlation plot looks like-
+One important step to understand the association of the features with the target is to estimate correlations. We calculated the correlations of the categorical columns by encoding the mean target values grouped by that particular feature and the corresponding correlation plot looks like-
 
 ![correlation_original](assets/corr_heatmap_original.png)
 
-It looks like `jobType` has the biggest correlation with the target. We will actually use this for our baseline model.
+It looks like `jobType` has the biggest correlation with the target followed by `degree`. We will actually use this for our baseline model.
 
 ## Baseline Model
+For the baseline model, we did not use any machine learning algorithm but rather just used the mean target encoding estimated by grouping by the most correlated features in the training set. We then predicted the `salary` for the validation set using these mean encodings. 
+
+We tried grouping the training data by both `jobType` and `degree` columns separately to predict the target. The corresponding `mean_squared_error` (MSE) looks like:
+
+| Grouped by | MSE |
+| :---: | :---: |
+| `jobType` | 960 |
+| `degree` | ~1030 |
+
+This served as the baseline for us. We will see how with using more sophisticated algorithms as well as hyperparameter tuning we will bring the MSE down to about 300.
 ## Feature Engineering
 Feature engineering is a big part of the machine learning workflow. It can lead to the drastic improvements in the performance metrics and it is an essential skill to have. Type of features generated depends a lot on the domain knowledge of the individual and different features can affect differently. This is the place where I spent most of my time on while working on this project. After brain-storming with a couple of ideas, I used the following extra-features along with the original ones:
 
