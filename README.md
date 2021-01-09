@@ -74,3 +74,55 @@ The corresponding data table for the target variable for the unique values for t
 | NONE | 98.176882 | 236853 |
 
 We can easily infer that advanced degrees like Ph.D. and masters indeed help in getting big salaries. There is a category with name `NONE` in this feature. This is probably those records for which the `degree` is not reported.
+
+__5. `jobType`__
+
+![jobtype](assets/job_type.png)
+Data table:
+| jobType | mean | count |
+| :---: | :---: | :---: |
+| CEO | 145.311425 | 124778 |
+| CFO | 135.458547 | 124369 |
+| CTO | 135.481067 | 125045 |
+| JANITOR | 70.813045 | 124971 |
+| JUNIOR | 95.333087 | 124592 |
+| MANAGER | 115.368518 | 125120 |
+| SENIOR | 105.487775 | 125886 |
+| VICE_PRESIDENT | 125.368630 | 125234 |
+
+There is a clear trend of `jobType` with `salary` as CEO, CFO, and CTO are high paying jobs whereas the median salary of junior and janitor level roles is comparatively quite low.
+
+__6. `major`__
+
+![major](assets/major.png)
+| major | mean | count |
+| :---: | :---: | :---: |
+| BIOLOGY | 127.932664 | 58379 |
+| BUSINESS | 135.648980 | 58518 |
+| CHEMISTRY | 129.072085 | 58875 |
+| COMPSCI | 132.075605 | 58382 |
+| ENGINEERING | 138.441342 | 58594 |
+| LITERATURE | 124.423097 | 58684 |
+| MATH | 133.322042 | 57800 |
+| NONE | 102.583864 | 532353 |
+| PHYSICS | 130.372436 | 58410 |
+Listings with majors like Engineering, Business and Maths have high salaries. There is a category called `None` which probably means either it is not reported or the major is not any of the listed categories.
+
+__7. `industry`__
+
+![industry](assets/industry.png)
+| industry | mean | count |
+| :---: | :---: | :---: |
+| AUTO | 109.435222 | 142941 |
+| EDUCATION | 99.448386 | 142819 |
+| FINANCE | 130.747659 | 142866 |
+| HEALTH | 115.735540 | 142755 |
+| OIL | 130.953863 | 142770 |
+| SERVICE | 104.446820 | 142639 |
+| WEB | 121.645362 | 143205 |
+The dataset is also almost uniformly distributed between various industries. Oil and Finance sector pay their employees more salaries as compared to other industries.
+
+__8. `companyId`__
+
+![company](assets/company_id.png)
+The above plot shows the median salaries of all the 63 unique companies. Most of the companies have their median salary of about 114k.  
