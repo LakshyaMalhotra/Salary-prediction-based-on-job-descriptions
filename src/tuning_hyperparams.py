@@ -10,7 +10,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import Ridge
 from sklearn.preprocessing import StandardScaler
-from sklearn.pipeline import make_pipeline
+from sklearn.pipeline import Pipeline
 from sklearn.compose import ColumnTransformer
 import optuna
 import lightgbm as lgb
@@ -20,8 +20,9 @@ from main import Run
 
 # Optimizer class
 class Optimize:
-    # class variable to get the data from the `Data` class
+    # class variables to get the data and categorical columns from the `Data` class
     train_df = None
+    cat_vars = []
 
     @staticmethod
     def optimize(trial) -> float:
@@ -34,6 +35,11 @@ class Optimize:
             col
             for col in Optimize.train_df.columns
             if col not in ["jobId", "salary"]
+        ]
+
+        # features that need feature scaling
+        scale_features = [
+            col for col in features if col not in Optimize.cat_vars
         ]
 
         # randomly select the regressor to use for optimization
@@ -100,6 +106,16 @@ class Optimize:
                     "fit_intercept", [True, False]
                 ),
             }
+            # scale the selected features
+            ct = ColumnTransformer(
+                [("scale", StandardScaler(), scale_features)],
+                remainder="passthrough",
+                n_jobs=-1,
+            )
+            ridge = Ridge(**params)
+            regressor_obj = Pipeline(
+                [("preprocessing", ct), ("ridge_lr", ridge)]
+            )
         # fit the regressor on training data
         regressor_obj.fit(X_train, y_train)
 
@@ -150,6 +166,7 @@ if __name__ == "__main__":
     print("Optimizing the model hyperparameters...")
     # assign data to the class variable and instantiate the optimizer object
     Optimize.train_df = data.train_df
+    Optimize.cat_vars = data.cat_vars
     opt = Optimize()
 
     # create a study object and start tuning the hyperprameters
