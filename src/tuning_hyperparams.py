@@ -8,6 +8,10 @@ import json
 from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor
+from sklearn.linear_model import Ridge
+from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import make_pipeline
+from sklearn.compose import ColumnTransformer
 import optuna
 import lightgbm as lgb
 
@@ -25,11 +29,18 @@ class Optimize:
         Optimize the hyperparameters of the regression model and return the 
         loss for the given trial
         """
+        # list of features
         features = [
             col
             for col in Optimize.train_df.columns
             if col not in ["jobId", "salary"]
         ]
+
+        # randomly select the regressor to use for optimization
+        regressor_name = trial.suggest_categorical(
+            "regressor", ["lgbr", "rf", "ridge"]
+        )
+
         # get the features and target from the original dataframe
         X = Optimize.train_df.loc[:, features]
         y = Optimize.train_df.salary
@@ -39,9 +50,6 @@ class Optimize:
             X, y, test_size=0.2, random_state=23
         )
 
-        # randomly select the regressor to use for optimization
-        regressor_name = trial.suggest_categorical("regressor", ["lgbr", "rf"])
-
         # define the respective hyperparameters for each regressor and
         # train the regressor
         if regressor_name == "lgbr":
@@ -50,15 +58,15 @@ class Optimize:
                 "verbosity": -1,
                 "n_jobs": -1,
                 "n_estimators": trial.suggest_int("n_estimators", 100, 200),
-                "reg_alpha": trial.suggest_float(
+                "reg_alpha": trial.suggest_loguniform(
                     "reg_alpha", 1e-8, 10.0, log=True
                 ),
-                "reg_lambda": trial.suggest_float(
+                "reg_lambda": trial.suggest_loguniform(
                     "reg_lambda", 1e-8, 10.0, log=True
                 ),
                 "num_leaves": trial.suggest_int("num_leaves", 100, 500),
                 "max_depth": trial.suggest_int("max_depth", 4, 30),
-                "learning_rate": trial.suggest_float(
+                "learning_rate": trial.suggest_loguniform(
                     "learning_rate", 0.01, 1.0, log=True
                 ),
                 "colsample_bytree": trial.suggest_float(
@@ -71,7 +79,7 @@ class Optimize:
                 ),
             }
             regressor_obj = lgb.LGBMRegressor(**params)
-        else:
+        elif regressor_name == "rf":
             params = {
                 "n_jobs": -1,
                 "n_estimators": trial.suggest_int("n_estimators", 100, 500),
@@ -85,6 +93,13 @@ class Optimize:
             }
             regressor_obj = RandomForestRegressor(**params)
 
+        else:
+            params = {
+                "alpha": trial.suggest_loguniform("alpha", 0.1, 100, log=True),
+                "fit_intercept": trial.suggest_categorical(
+                    "fit_intercept", [True, False]
+                ),
+            }
         # fit the regressor on training data
         regressor_obj.fit(X_train, y_train)
 
