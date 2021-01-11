@@ -12,9 +12,10 @@ import lightgbm as lgb
 import numpy as np
 import pandas as pd
 from sklearn.ensemble import RandomForestRegressor
-from sklearn.pipeline import make_pipeline
+from sklearn.pipeline import Pipeline
 from sklearn.linear_model import Ridge
 from sklearn.preprocessing import StandardScaler
+from sklearn.compose import ColumnTransformer
 
 from preprocess import Data, EngineerFeatures
 import matplotlib.pyplot as plt
@@ -100,7 +101,7 @@ class Model:
             for col in self.train_df.columns
             if col not in ["jobId", "salary", "kfold"]
         ]
-        self.scaled_features = [
+        self.scale_features = [
             col for col in self.features if col not in self.data.cat_vars
         ]
         self.target = self.data.target_var
@@ -423,17 +424,26 @@ class Run:
             "min_samples_split": 3,
             "n_jobs": -1,
         }
-        return lgb_params, rf_params
+        ridge_params = {}
+        return lgb_params, rf_params, ridge_params
 
-    def _models(self) -> Tuple[lgb.LGBMRegressor, RandomForestRegressor]:
-        lgb_params, rf_params = self._get_hyperparams()
+    def _models(
+        self, data: Data
+    ) -> Tuple[lgb.LGBMRegressor, RandomForestRegressor]:
+        lgb_params, rf_params, ridge_params = self._get_hyperparams()
         print("Updating models with hyperparameters...")
 
         # define model objects`
         lgbm = lgb.LGBMRegressor(**lgb_params,)
         rf = RandomForestRegressor(**rf_params)
-
-        return lgbm, rf
+        ct = ColumnTransformer(
+            [("scale", StandardScaler(), data.scale_features)],
+            remainder="passthrough",
+            n_jobs=-1,
+        )
+        ridge = Ridge(**ridge_params)
+        ridge_pipe = Pipeline([("preprocessing", ct), ("ridge_lr", ridge)])
+        return lgbm, rf, ridge_pipe
 
     def load_models(self, add_more_models=None) -> Model:
         """`Load the models and data to `Model` class. More models can be added 
@@ -454,10 +464,11 @@ class Run:
         model = Model(data, n_folds=self.n_folds)
 
         # get the models and add them to the `Model` instance
-        lgbm, rf = self._models()
+        lgbm, rf, ridge_pipe = self._models()
         print("Loading models...")
         model.add_model(lgbm)
         model.add_model(rf)
+        model.add_model(ridge_pipe)
 
         # add more models if available
         if add_more_models is not None:
