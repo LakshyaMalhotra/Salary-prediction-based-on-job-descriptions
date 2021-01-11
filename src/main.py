@@ -58,7 +58,7 @@ def build_argparser() -> ArgumentParser:
     parser.add_argument(
         "--params",
         required=True,
-        type=str,
+        nargs="+",
         help="Path to the file containing optimized hyperparameters.",
     )
 
@@ -352,7 +352,7 @@ class Run:
         path: str,
         model_dir: str,
         n_folds: int = 10,
-        param_file: str = None,
+        param_files: list = None,
     ):
         """Utility class to load models and their hyperparams and perform 
         cross-validation.
@@ -367,7 +367,7 @@ class Run:
         """
         self.path = path
         self.model_dir = model_dir
-        self.param_file = param_file
+        self.param_files = param_files
         self.n_folds = n_folds
         self.train_feature_file = os.path.join(path, "train_features.csv")
         self.train_target_file = os.path.join(path, "train_salaries.csv")
@@ -401,7 +401,7 @@ class Run:
 
         return data
 
-    def _get_hyperparams(self) -> Tuple[dict, dict]:
+    def _get_hyperparams(self, index) -> Tuple[dict, dict]:
         """Load the optimized hyperparameters from a file for LightGBM model and 
         define parameter dict for Random forest.
 
@@ -410,34 +410,29 @@ class Run:
             Tuple[dict, dict]: Dictionaries containing hyperparameters for the models.
         """
         print("Loading hyperparameters...")
-        with open(os.path.join(self.model_dir, self.param_file), "r") as f:
-            lgb_params = json.load(f)
+        with open(
+            os.path.join(self.model_dir, self.param_files[index]), "r"
+        ) as f:
+            _params = json.load(f)
 
         # remove the regressor name from the dictionary
-        lgb_params = {k: v for k, v in lgb_params.items() if k != "regressor"}
+        _params = {k: v for k, v in _params.items() if k != "regressor"}
 
-        # define parameters for random forest
-        rf_params = {
-            "n_estimators": 903,
-            "max_depth": 14,
-            "max_features": "auto",
-            "min_samples_split": 3,
-            "n_jobs": -1,
-        }
-        ridge_params = {}
-        return lgb_params, rf_params, ridge_params
+        return _params
 
     def _models(
-        self, data: Data
+        self, model: Model
     ) -> Tuple[lgb.LGBMRegressor, RandomForestRegressor]:
-        lgb_params, rf_params, ridge_params = self._get_hyperparams()
+        lgb_params = self._get_hyperparams(index=0)
+        rf_params = self._get_hyperparams(index=1)
+        ridge_params = self._get_hyperparams(index=2)
         print("Updating models with hyperparameters...")
 
         # define model objects`
         lgbm = lgb.LGBMRegressor(**lgb_params,)
         rf = RandomForestRegressor(**rf_params)
         ct = ColumnTransformer(
-            [("scale", StandardScaler(), data.scale_features)],
+            [("scale", StandardScaler(), model.scale_features)],
             remainder="passthrough",
             n_jobs=-1,
         )
@@ -464,7 +459,7 @@ class Run:
         model = Model(data, n_folds=self.n_folds)
 
         # get the models and add them to the `Model` instance
-        lgbm, rf, ridge_pipe = self._models()
+        lgbm, rf, ridge_pipe = self._models(model)
         print("Loading models...")
         model.add_model(lgbm)
         model.add_model(rf)
@@ -496,7 +491,7 @@ if __name__ == "__main__":
     args = build_argparser().parse_args()
     path = args.data_dir
     model_dir = args.model_dir
-    param_file = args.params
+    param_files = args.params
     n_folds = args.n_folds
-    run = Run(path, model_dir, n_folds=n_folds, param_file=param_file)
+    run = Run(path, model_dir, n_folds=n_folds, param_files=param_files)
     run.run_cv()
