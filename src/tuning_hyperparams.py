@@ -4,6 +4,7 @@ __copyright__ = "Copyright (c) 2021 Lakshya Malhotra"
 # library imports
 import os
 import json
+from typing import OrderedDict
 
 from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import train_test_split
@@ -14,7 +15,6 @@ from sklearn.pipeline import Pipeline
 from sklearn.compose import ColumnTransformer
 import optuna
 import lightgbm as lgb
-import plotly
 
 from preprocess import Data, EngineerFeatures
 from main import Run
@@ -152,9 +152,12 @@ class Optimize:
         print("Best parameters: ")
         print(best_params)
         od = optuna.importance.get_param_importances(study)
+        od = OrderedDict(sorted(od.items(), key=lambda x: x[1], reverse=True))
         print("Parameter importance for the best model: ")
         for k, v in od.items():
             print(k, v)
+
+        return od
 
 
 if __name__ == "__main__":
@@ -180,14 +183,8 @@ if __name__ == "__main__":
     # store and display the results
     json_path = opt.write_to_json(model_path, best_params=best_params_)
     print(f"Best params are saved to file: {json_path}")
-    opt.print_param_stats(best_params_, study=study)
+    od = opt.print_param_stats(best_params_, study=study)
     gp = optuna.visualization.plot_parallel_coordinate(
-        study,
-        params=[
-            "min_child_samples",
-            "max_depth",
-            "n_estimators",
-            "learning_rate",
-        ],
+        study, params=od.keys()[:6]
     )
     gp.show()

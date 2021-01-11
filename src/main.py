@@ -417,10 +417,10 @@ class Run:
 
         # define parameters for random forest
         rf_params = {
-            "n_estimators": 60,
-            "max_depth": 15,
-            "min_samples_split": 80,
-            "max_features": 8,
+            "n_estimators": 903,
+            "max_depth": 14,
+            "max_features": "auto",
+            "min_samples_split": 3,
             "n_jobs": -1,
         }
         return lgb_params, rf_params
