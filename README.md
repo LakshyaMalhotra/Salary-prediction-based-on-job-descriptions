@@ -147,7 +147,9 @@ We tried grouping the training data by both `jobType` and `degree` columns separ
 | `degree` | ~1030 |
 
 This served as the baseline for us. We will see how with using more sophisticated algorithms as well as hyperparameter tuning we will bring the MSE down to about 300.
-## Feature Engineering
+
+## Hypothesize
+### Feature Engineering
 Feature engineering is a big part of the machine learning workflow. It can lead to the drastic improvements in the performance metrics and it is an essential skill to have. Type of features generated depends a lot on the domain knowledge of the individual and different features can affect differently. This is the place where I spent most of my time on while working on this project. After brain-storming with a couple of ideas, I used the following extra-features along with the original ones:
 
 1. `mean`, `min`, `max`, `std`, `median` of `salary` grouped by all the categorical columns.
@@ -180,4 +182,9 @@ As we can see, `mean_salary` and `median_salary` has the largest magnitude of th
 | mean MSE with `*_salary` features | mean MSE without `*_salary` features |
 | :---: | :---: | 
 | 292 | 355 |
+
+### Estimators
+- Ridge regression - Linear model used 
+- Random Forest
+- LightGBM
 

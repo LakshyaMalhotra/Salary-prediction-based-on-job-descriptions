@@ -12,6 +12,9 @@ import lightgbm as lgb
 import numpy as np
 import pandas as pd
 from sklearn.ensemble import RandomForestRegressor
+from sklearn.pipeline import make_pipeline
+from sklearn.linear_model import Ridge
+from sklearn.preprocessing import StandardScaler
 
 from preprocess import Data, EngineerFeatures
 import matplotlib.pyplot as plt
@@ -96,6 +99,9 @@ class Model:
             col
             for col in self.train_df.columns
             if col not in ["jobId", "salary", "kfold"]
+        ]
+        self.scaled_features = [
+            col for col in self.features if col not in self.data.cat_vars
         ]
         self.target = self.data.target_var
 

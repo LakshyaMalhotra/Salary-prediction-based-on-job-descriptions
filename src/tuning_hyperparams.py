@@ -14,6 +14,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.compose import ColumnTransformer
 import optuna
 import lightgbm as lgb
+import plotly
 
 from preprocess import Data, EngineerFeatures
 from main import Run
@@ -43,9 +44,7 @@ class Optimize:
         ]
 
         # randomly select the regressor to use for optimization
-        regressor_name = trial.suggest_categorical(
-            "regressor", ["lgbr", "rf", "ridge"]
-        )
+        regressor_name = trial.suggest_categorical("regressor", ["lgbr"])
 
         # get the features and target from the original dataframe
         X = Optimize.train_df.loc[:, features]
@@ -63,17 +62,15 @@ class Optimize:
                 "metric": "mean_squared_error",
                 "verbosity": -1,
                 "n_jobs": -1,
-                "n_estimators": trial.suggest_int("n_estimators", 100, 200),
-                "reg_alpha": trial.suggest_loguniform(
-                    "reg_alpha", 1e-8, 10.0, log=True
-                ),
+                "n_estimators": trial.suggest_int("n_estimators", 100, 1000),
+                "reg_alpha": trial.suggest_loguniform("reg_alpha", 1e-8, 10.0),
                 "reg_lambda": trial.suggest_loguniform(
-                    "reg_lambda", 1e-8, 10.0, log=True
+                    "reg_lambda", 1e-8, 10.0
                 ),
                 "num_leaves": trial.suggest_int("num_leaves", 100, 500),
                 "max_depth": trial.suggest_int("max_depth", 4, 30),
                 "learning_rate": trial.suggest_loguniform(
-                    "learning_rate", 0.01, 1.0, log=True
+                    "learning_rate", 0.01, 1.0
                 ),
                 "colsample_bytree": trial.suggest_float(
                     "colsample_bytree", 0.3, 1.0
@@ -101,9 +98,15 @@ class Optimize:
 
         else:
             params = {
-                "alpha": trial.suggest_loguniform("alpha", 0.1, 100, log=True),
+                "alpha": trial.suggest_loguniform("alpha", 0.1, 100),
                 "fit_intercept": trial.suggest_categorical(
                     "fit_intercept", [True, False]
+                ),
+                "normalize": trial.suggest_categorical(
+                    "normalize", [True, False]
+                ),
+                "solver": trial.suggest_categorical(
+                    "solver", ["auto", "svd", "saga", "lsqr", "cholesky"]
                 ),
             }
             # scale the selected features
@@ -133,7 +136,7 @@ class Optimize:
         Write the best hyperparameters to a JSON file
         """
         hyperparams_dict = json.dumps(best_params)
-        path_to_json = os.path.join(path, "best_hyperparams.json")
+        path_to_json = os.path.join(path, "best_hyperparams_lgbr.json")
         with open(path_to_json, "w") as f:
             f.write(hyperparams_dict)
 
@@ -178,3 +181,13 @@ if __name__ == "__main__":
     json_path = opt.write_to_json(model_path, best_params=best_params_)
     print(f"Best params are saved to file: {json_path}")
     opt.print_param_stats(best_params_, study=study)
+    gp = optuna.visualization.plot_parallel_coordinate(
+        study,
+        params=[
+            "min_child_samples",
+            "max_depth",
+            "n_estimators",
+            "learning_rate",
+        ],
+    )
+    gp.show()
