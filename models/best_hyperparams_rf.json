@@ -1,1 +1,1 @@
-{"regressor": "rf", "n_estimators": 212, "max_depth": 22, "max_features": null, "min_samples_split": 7}
+{"regressor": "rf", "n_estimators": 903, "max_depth": 14, "max_features": "auto", "min_samples_split": 3}
