@@ -190,6 +190,34 @@ The three models which we thought would show a great improvement over the baseli
 - [LightGBM](https://lightgbm.readthedocs.io/en/latest/)- A gradient boosting framework which is ultra fast and high performance. It performs almost always better in terms of the results as well as the running time than the estimators listed above
 
 ## Modelling (DEVELOP)
-### Create Models
+### Create models and tune hyperparameters
 The three estimators listed were then created and their corresponding hyperparameters were tuned using [optuna](https://optuna.readthedocs.io/en/stable/index.html). The result of the hyperparameter optimization for each estimator is summarized in the following plots:
- 
+1. LightGBM
+
+- Effect on objective (mean squared error) due to various hyperparams:
+
+![parallel_lgb](assets/parallel_coord_lgbr.png)
+
+- Hyperparameter importances:
+
+![hyper_imp_lgb](assets/hyperparam_importances_lgbr.png)
+
+2. Random Forest
+
+- Effect on objective (mean squared error) due to various hyperparams:
+
+![parallel_rf](assets/parallel_coord_rf.png)
+
+- Hyperparameter importances:
+
+![hyper_imp_rf](assets/hyperparam_importances_rf.png)
+
+3. Ridge Regression
+
+- Effect on objective (mean squared error) due to various hyperparams:
+
+![parallel_ridge](assets/parallel_coord_ridge.png)
+
+- Hyperparameter importances:
+
+![hyper_imp_ridge](assets/hyperparam_importances_ridge.png)
