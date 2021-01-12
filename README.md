@@ -4,6 +4,7 @@ The goal of this project is to predict the missing salaries of the unseen job po
 
 The possible use-case for this project is for the websites showing job postings to give a better estimate of the salaries and to give job seekers an idea about the salaries based on their credentials.
 
+> NOTE: The dataset for the project is pretty much modelling ready and there is a very little scope of data cleaning and feature engineering (in my opinion). That is why, I took the full opportunity to do a lot of experimentation regarding automating the code as possible and to write clean and modular code (tried to avoid hard-coding values). 
 ## Data Exploration (DISCOVER)
 ### Checking out the data
 Following datasets are provided for this project in the CSV format:
@@ -259,7 +260,11 @@ where:
 - `--model_dir`: path to the output directory. It stores all the saved models, optimized hyperparam JSON files and the predictions
 - `--param`: name of all the optimized hyperparameter files for the models used followed by a space between two names.
 
-The hyperparameter tuning file is located [here](src/tune_hyperparams.py).
+The hyperparameter tuning file is located [here](src/tune_hyperparams.py) and can be run by following command (inside the environment):
+
+```bash
+python tune_hyperparams.py
+```
 
 To install all the requirements, first create a virtual environment using (on macOS and linux systems only):
 
@@ -273,3 +278,17 @@ Once the environment is created and activated, run the following:
 pip install -r requirements.txt
 ```
 This will install all the requirements needed to run the code.
+
+### Deploy solution
+The most important features as far as model performance is concerned are shown in the following plot:
+
+![feat_importance](assets/feat_importances_latest.png)
+
+The left panel shows the feature importances for LightGBM model whereas the feature importances for Random forest is shown in the right panel. For the best performing model (LightGBM) the most important feature is `milesFromMetropolis` followed by `std_salary` which shows the dispersion in the salary grouped by all categorical features in the data. As described earlier, all the feature with suffix `*_salary` in their name introduce data leakage in the data and should be avoided.
+
+## References:
+1. Optuna documentation: https://optuna.readthedocs.io/en/stable/index.html
+2. LightGBM: https://lightgbm.readthedocs.io/en/latest/
+3. https://towardsdatascience.com/using-columntransformer-to-combine-data-processing-steps-af383f7d5260
+4. https://towardsdatascience.com/https-medium-com-perlitz-hyper-parameter-optimization-with-optuna-1c32785e7df
+5. A huge inspiration from DSDJ intermediate notebook on the same project.
