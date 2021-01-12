@@ -184,7 +184,8 @@ As we can see, `mean_salary` and `median_salary` has the largest magnitude of th
 | 291 | 355 |
 
 ### Estimators
-- Ridge regression - Linear model used 
-- Random Forest
-- LightGBM
+The three models which we thought would show a great improvement over the baseline model are following:
+- Ridge regression - Linear model which uses ordinary least squares with l2-regularization. Since it is a linear model, numeric parameters need to be scaled first before feeding the data into the model
+- Random Forest - Tree based method which uses an ensemble of the decision trees and makes predictions based on the majority vote
+- LightGBM - Gradient boosting framework which is ultra fast and high performance. It performs almost always better in terms of the results as well as the running time than the estimators listed above
 
