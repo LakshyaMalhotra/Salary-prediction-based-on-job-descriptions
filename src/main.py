@@ -219,8 +219,8 @@ class Model:
         )
 
     def best_model_predictions(self, save_predictions: bool = True) -> None:
-        """Make predictions from the fitted model and save the predictions to a 
-        CSV file.
+        """Make predictions from the fitted model on the test set and save the 
+        predictions to a CSV file.
 
         Args:
         -----
