@@ -181,7 +181,7 @@ As we can see, `mean_salary` and `median_salary` has the largest magnitude of th
 
 | mean MSE with `*_salary` features | mean MSE without `*_salary` features |
 | :---: | :---: | 
-| 292 | 355 |
+| 291 | 355 |
 
 ### Estimators
 - Ridge regression - Linear model used 
