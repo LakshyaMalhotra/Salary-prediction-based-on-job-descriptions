@@ -260,7 +260,7 @@ where:
 - `--model_dir`: path to the output directory. It stores all the saved models, optimized hyperparam JSON files and the predictions
 - `--param`: name of all the optimized hyperparameter files for the models used followed by a space between two names.
 
-The hyperparameter tuning file is located [here](src/tune_hyperparams.py) and can be run by following command (inside the environment):
+The hyperparameter tuning file is located [here](src/tuning_hyperparams.py) and can be run by following command (inside the environment):
 
 ```bash
 python tune_hyperparams.py
