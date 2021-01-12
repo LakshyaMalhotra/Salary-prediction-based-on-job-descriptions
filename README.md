@@ -244,3 +244,32 @@ _Although it doesn't look like much difference between the mean sqaured errors o
 ### Selecting the best model
 It is clear from the above table that LightGBM out-performed all the other models, both in terms of the performance as well as the running time. We will use it as our "production" model.
 
+## Running the model (DEPLOY)
+### Automate pipline
+All the optimized hyperparameters for the best model are saved as a [JSON file](models/best_hyperparams_lgbr.json) with the saved model stored as a binary file in the [models](models/) directory. The predictions made by the best model on the test set are also saved in the [models](models/) directory as a [CSV file](models/predictions.csv).
+
+The code for training the model is located in the [src](src/) directory with file name - [main.py](src/main.py). It can be run by using the following command from the root directory inside the python environment created by running the `requirements.txt` file:
+
+```bash
+python src/main.py --n_folds 5 --data_dir data --model_dir models --param best_hyperparams_lgbr.json best_hyperparams_rf.json best_hyperparams_ridge.json
+```
+where:
+- `--n_folds`: the number of cross-validation folds
+- `--data_dir`: path to the directory containing all the train and test CSV files
+- `--model_dir`: path to the output directory. It stores all the saved models, optimized hyperparam JSON files and the predictions
+- `--param`: name of all the optimized hyperparameter files for the models used followed by a space between two names.
+
+The hyperparameter tuning file is located [here](src/tune_hyperparams.py).
+
+To install all the requirements, first create a virtual environment using (on macOS and linux systems only):
+
+```bash
+python -m venv <environment_name>
+source <environment_name>/bin/activate
+```
+Once the environment is created and activated, run the following:
+
+```bash
+pip install -r requirements.txt
+```
+This will install all the requirements needed to run the code.
