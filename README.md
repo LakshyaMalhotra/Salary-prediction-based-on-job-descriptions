@@ -177,11 +177,7 @@ The following table summarizes the correlation of each feature with target `sala
 | `max_milesFromMetropolis` | -0.262282 |
 | `min_milesFromMetropolis` | 0.172798 |
 
-As we can see, `mean_salary` and `median_salary` has the largest magnitude of the correlation with target. This should not be surprising because every feature with suffix `_salary` is a result of some aggregate function based on target grouped by all categorical columns. In other words, all of the features with suffix `_salary` has some information about the `salary`. This looks really good but there's a big caveat: __although these feature will really help bringing the `mean_squared_error` (MSE) down for the training and validation set but they will result in poor generalization error__. The model will will overfit the validation set but will have a large MSE on the test set. This is called _data leakage_. To see its effect, we analyzed the model performance _with_ and _without_ these columns on 10-fold cross-validation and the results are shown in the following table (results rounded off to the nearest integer):
-
-| mean MSE with `*_salary` features | mean MSE without `*_salary` features |
-| :---: | :---: | 
-| 291 | 355 |
+As we can see, `mean_salary` and `median_salary` has the largest magnitude of the correlation with target. This should not be surprising because every feature with suffix `_salary` is a result of some aggregate function based on target grouped by all categorical columns.
 
 ### Estimators
 The three models which we thought would show a great improvement over the baseline model are following:
@@ -221,3 +217,28 @@ The three estimators listed were then created and their corresponding hyperparam
 - Hyperparameter importances:
 
 ![hyper_imp_ridge](assets/hyperparam_importances_ridge.png)
+
+
+### Test Models
+We used five fold cross validation on each of the models with the optimum hyperparameters showed in the above step. The results can be shown in the following table in terms of the mean squared error for each fold:
+
+| Fold | LightGBM | Random Forest | Ridge Regression |
+| :---: | :---: | :---: | :---: |
+| 1 | 292.36 | 299.98 | 331.89 |
+| 2 | 292.03 | 299.67 | 331.86 |
+| 3 | 291.82 | 299.02 | 332.38 |
+| 4 | 291.31 | 299.24 | 332.10 |
+| 5 | 291.03 | 298.63 | 330.74 |
+| __Mean__ | 291.71 | 299.31 | 331.79 |
+
+_Although it doesn't look like much difference between the mean sqaured errors of LightGBM and Random forest, these two models differ vastly in terms of the running time. Each fold of LightGBM took around 5 minutes to run whereas random forest took around 1 hour per fold._
+
+> One very important thing that we should note is that all of the engineered features with suffix `_salary` have some information about the target variable `salary`. This poses a big caveat: __although these feature will really help bringing the `mean_squared_error` (MSE) down for the training and validation set but they will result in a poor generalization error__. The model will overfit the validation set but will have a large MSE on the test set. This is called _data leakage_. To see its effect, we analyzed the model performance _with_ and _without_ these columns on 10-fold cross-validation and the results are shown in the following table (results rounded off to the nearest integer):
+>
+> | mean MSE with `*_salary` features | mean MSE without `*_salary` features |
+> | :---: | :---: | 
+> | 291 | 355 |
+>
+> We nevertheless kept these features for the training as well as validation since we don't know how well the model performed on the test set.
+
+
