@@ -1,10 +1,10 @@
 # Salary Prediction based on Job descriptions
-## Problem Overview
+## Problem Overview (DEFINE)
 The goal of this project is to predict the missing salaries of the unseen job postings by analyzing a dataset about job postings and their corresponding salaries.
 
 The possible use-case for this project is for the websites showing job postings to give a better estimate of the salaries and to give job seekers an idea about the salaries based on their credentials.
 
-## Data Exploration
+## Data Exploration (DISCOVER)
 ### Checking out the data
 Following datasets are provided for this project in the CSV format:
 - `train_features.csv`: As name suggests, this dataset contains the training data in tabular form with all the features. It contains 1 million records and each one of them corresponds to a job listing. All the records contain 8 features which are described as follows:
@@ -185,7 +185,11 @@ As we can see, `mean_salary` and `median_salary` has the largest magnitude of th
 
 ### Estimators
 The three models which we thought would show a great improvement over the baseline model are following:
-- Ridge regression - Linear model which uses ordinary least squares with l2-regularization. Since it is a linear model, numeric parameters need to be scaled first before feeding the data into the model
-- Random Forest - Tree based method which uses an ensemble of the decision trees and makes predictions based on the majority vote
-- LightGBM - Gradient boosting framework which is ultra fast and high performance. It performs almost always better in terms of the results as well as the running time than the estimators listed above
+- [Ridge regression](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.Ridge.html) - Linear model which uses ordinary least squares with l2-regularization. Since it is a linear model, numeric parameters need to be scaled first before feeding the data into the model
+- [Random Forest](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestRegressor.html?highlight=random%20forest#sklearn-ensemble-randomforestregressor) - Tree based method which uses an ensemble of the decision trees and makes predictions based on the majority vote
+- [LightGBM](https://lightgbm.readthedocs.io/en/latest/)- A gradient boosting framework which is ultra fast and high performance. It performs almost always better in terms of the results as well as the running time than the estimators listed above
 
+## Modelling (DEVELOP)
+### Create Models
+The three estimators listed were then created and their corresponding hyperparameters were tuned using [optuna](https://optuna.readthedocs.io/en/stable/index.html). The result of the hyperparameter optimization for each estimator is summarized in the following plots:
+ 
