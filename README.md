@@ -241,4 +241,6 @@ _Although it doesn't look like much difference between the mean sqaured errors o
 >
 > We nevertheless kept these features for the training as well as validation since we don't know how well the model performed on the test set.
 
+### Selecting the best model
+It is clear from the above table that LightGBM out-performed all the other models, both in terms of the performance as well as the running time. We will use it as our "production" model.
 
