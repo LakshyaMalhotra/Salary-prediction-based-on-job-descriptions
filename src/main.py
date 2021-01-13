@@ -78,7 +78,7 @@ class Model:
         Args:
         -----
             data (Data): Instance of `Data` class
-            models (List[Union[RandomForestRegressor, lgb.LGBMRegressor]], optional): 
+            models (List[Union[RandomForestRegressor, lgb.LGBMRegressor, Ridge]], optional): 
                 Model to be used, it can be either a sklearn or lightGBM model. Defaults to None.
             n_folds (int, optional): Number of folds of K-fold cross-validation. Defaults to 10.
             model_dir (str, optional): Path for saving the models. Defaults to "models".
@@ -190,7 +190,7 @@ class Model:
         Args:
         -----
             loss (float): Mean squared error
-            model (List[Union[RandomForestRegressor, lgb.LGBMRegressor]]): model (regressor) object
+            model (List[Union[RandomForestRegressor, lgb.LGBMRegressor, Ridge]]): model (regressor) object
 
         Returns:
         --------
@@ -488,10 +488,13 @@ class Run:
 
 
 if __name__ == "__main__":
+    # read the parameters from the command to local variables
     args = build_argparser().parse_args()
     path = args.data_dir
     model_dir = args.model_dir
     param_files = args.params
     n_folds = args.n_folds
+
+    # instantiate the `Run` class and run cross-validation
     run = Run(path, model_dir, n_folds=n_folds, param_files=param_files)
     run.run_cv()
