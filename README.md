@@ -1,4 +1,11 @@
 # Salary Prediction based on Job descriptions
+## Table of Contents
+* [Problem Overview](##Problem%20Overview%20(DEFINE))
+* [Data Exploration](##Data%20Exploration%20(DISCOVER))
+    - [First Glance at the Data](###First%20Glance%20at%20the%20Data)
+    - [Data Cleaning](###Data%20Cleaning)
+    - [Data Visualization](###Data%20Visualization)
+
 ## Problem Overview (DEFINE)
 The goal of this project is to predict the missing salaries of the unseen job postings by analyzing a dataset about job postings and their corresponding salaries.
 
@@ -6,7 +13,7 @@ The possible use-case for this project is for the websites showing job postings 
 
 > NOTE: The dataset for the project is pretty much modelling ready and there is a very little scope of data cleaning and feature engineering (in my opinion). That is why, I took the full opportunity to do a lot of experimentation regarding automating the code as possible and to write clean and modular code (tried to avoid hard-coding values). 
 ## Data Exploration (DISCOVER)
-### Checking out the data
+### First Glance at the Data
 Following datasets are provided for this project in the CSV format:
 - `train_features.csv`: As name suggests, this dataset contains the training data in tabular form with all the features. It contains 1 million records and each one of them corresponds to a job listing. All the records contain 8 features which are described as follows:
     
@@ -39,7 +46,7 @@ These cases need to be pre-precessed (imputation or removal of records) before g
 It is found that the data is pretty much clean with no duplicate or missing values. There are, however, 5 training records with zero salary, they are not very interesting to us so we just removed them.
 
 ### Data Visualization
-> All the exploratory data analysis is done in the notebook which can be found [here](notebooks/EDA_and_feature_engineering.ipynb).
+> __All the code for the exploratory data analysis is available in the notebook which can be found [here](notebooks/EDA_and_feature_engineering.ipynb).__
 
 Visualization part of the data involves the visualizing the trends and summaries of various features and target variable and to plot their correlation with each other. Let's start with the target variable first:
 
