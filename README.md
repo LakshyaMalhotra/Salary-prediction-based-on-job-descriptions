@@ -39,6 +39,8 @@ These cases need to be pre-precessed (imputation or removal of records) before g
 It is found that the data is pretty much clean with no duplicate or missing values. There are, however, 5 training records with zero salary, they are not very interesting to us so we just removed them.
 
 ### Data Visualization
+> All the exploratory data analysis is done in the notebook which can be found [here](notebooks/EDA_and_feature_engineering.ipynb).
+
 Visualization part of the data involves the visualizing the trends and summaries of various features and target variable and to plot their correlation with each other. Let's start with the target variable first:
 
 __1. Target variable: `salary`__
