@@ -271,7 +271,20 @@ It is clear from the above table that LightGBM out-performed all the other model
 ### Automate pipeline
 All the optimized hyperparameters for the best model are saved as a [JSON file](models/best_hyperparams_lgbr.json) with the saved model stored as a binary file in the [models](models/) directory. The predictions made by the best model on the test set are also saved in the [models](models/) directory as a [CSV file](models/predictions.csv).
 
-The code for training the model is located in the [src](src/) directory with file name - [main.py](src/main.py). It can be run by using the following command from the root directory inside the python environment created by running the `requirements.txt` file:
+The code for training the model is located in the [src](src/) directory with file name - [main.py](src/main.py). But we need to install all the requirements needed to run the code first. 
+To install all the requirements, first create a virtual environment using (on macOS and linux systems only):
+
+```bash
+python -m venv <environment_name>
+source <environment_name>/bin/activate
+```
+Once the environment is created and activated, run the following:
+
+```bash
+pip install -r requirements.txt
+```
+
+Now for running the model, we just need to go to the root directory inside the python environment and run:
 
 ```bash
 python src/main.py --n_folds 5 --data_dir data --model_dir models --param best_hyperparams_lgbr.json best_hyperparams_rf.json best_hyperparams_ridge.json
@@ -287,19 +300,6 @@ The hyperparameter tuning file is located [here](src/tuning_hyperparams.py) and 
 ```bash
 python tune_hyperparams.py
 ```
-
-To install all the requirements, first create a virtual environment using (on macOS and linux systems only):
-
-```bash
-python -m venv <environment_name>
-source <environment_name>/bin/activate
-```
-Once the environment is created and activated, run the following:
-
-```bash
-pip install -r requirements.txt
-```
-This will install all the requirements needed to run the code.
 
 ### Deploy solution
 The most important features as far as model performance is concerned are shown in the following plot:
