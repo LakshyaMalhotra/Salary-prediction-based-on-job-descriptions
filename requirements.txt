@@ -1,5 +1,4 @@
 black==19.10b0
-category-encoders==2.2.2
 joblib==0.16.0
 jupyterlab==2.1.0
 lightgbm==2.3.2
