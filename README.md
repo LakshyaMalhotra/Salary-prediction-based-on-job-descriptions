@@ -1,10 +1,23 @@
 # Salary Prediction based on Job descriptions
 ## Table of Contents
-* [Problem Overview](#Problem%20Overview%20(DEFINE))
+* [Problem Overview](#problem-overview-define)
 * [Data Exploration](#data-exploration-discover)
-    - [First Glance at the Data](#First%20Glance%20at%20the%20Data)
-    - [Data Cleaning](#Data%20Cleaning)
+    - [First Glance at the Data](#first-glance-at-the-data)
+    - [Data Cleaning](#data-cleaning)
     - [Data Visualization](#data-visualization)
+    - [Correlation Plots](#correlation-plots)
+* [Baseline Model](#baseline-model)
+* [Hypothesize](#hypothesize)
+    - [Feature Engineering](#feature-engineering)
+    - [Estimators](#estimators)
+* [Modelling](#modelling-develop)
+    - [Create models and tune hyperparameters](#create-models-and-tune-hyperparameters)
+    - [Test Models](#test-models)
+    - [Selecting the Best Model](#selecting-the-best-model)
+* [Running the Models](#running-the-model-deploy)
+    - [Automate pipeline](#automate-pipeline)
+    - [Deploy Solution](#deploy-solution)
+* [References](#references)
 
 ## Problem Overview (DEFINE)
 The goal of this project is to predict the missing salaries of the unseen job postings by analyzing a dataset about job postings and their corresponding salaries.
@@ -255,7 +268,7 @@ _Although it doesn't look like much difference between the mean sqaured errors o
 It is clear from the above table that LightGBM out-performed all the other models, both in terms of the performance as well as the running time. We will use it as our "production" model.
 
 ## Running the model (DEPLOY)
-### Automate pipline
+### Automate pipeline
 All the optimized hyperparameters for the best model are saved as a [JSON file](models/best_hyperparams_lgbr.json) with the saved model stored as a binary file in the [models](models/) directory. The predictions made by the best model on the test set are also saved in the [models](models/) directory as a [CSV file](models/predictions.csv).
 
 The code for training the model is located in the [src](src/) directory with file name - [main.py](src/main.py). It can be run by using the following command from the root directory inside the python environment created by running the `requirements.txt` file:
