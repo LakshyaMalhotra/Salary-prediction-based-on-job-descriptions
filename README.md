@@ -1,10 +1,10 @@
 # Salary Prediction based on Job descriptions
 ## Table of Contents
 * [Problem Overview](#Problem%20Overview%20(DEFINE))
-* [Data Exploration](#Data%20Exploration%20(DISCOVER))
+* [Data Exploration](#data-exploration-discover)
     - [First Glance at the Data](#First%20Glance%20at%20the%20Data)
     - [Data Cleaning](#Data%20Cleaning)
-    - [Data Visualization](#Data%20Visualization)
+    - [Data Visualization](#data-visualization)
 
 ## Problem Overview (DEFINE)
 The goal of this project is to predict the missing salaries of the unseen job postings by analyzing a dataset about job postings and their corresponding salaries.
